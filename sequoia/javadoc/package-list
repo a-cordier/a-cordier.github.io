@@ -1,5 +1,4 @@
-com.acordier.nsc.controller
-com.acordier.nsc.core
-com.acordier.nsc.logging
-com.acordier.nsc.model
-com.acordier.nsc.view
+com.acordier.sequoia.controller
+com.acordier.sequoia.core
+com.acordier.sequoia.model
+com.acordier.sequoia.view
