@@ -1,0 +1,6 @@
+fr.cnam.dijkstratp.console
+fr.cnam.dijkstratp.core.dao
+fr.cnam.dijkstratp.core.engine
+fr.cnam.dijkstratp.core.entities
+fr.cnam.dijkstratp.util
+fr.cnam.dijkstratp.view
