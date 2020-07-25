@@ -5784,7 +5784,7 @@
             this.voiceManager = new VoiceManager(this.audioContext);
             this.voiceManager.connect(this.analyzer);
             this.analyzer.connect(this.audioContext.destination);
-            await this.audioContext.audioWorklet.addModule("wasm.js");
+            await this.audioContext.audioWorklet.addModule("voice-processor.js");
             this.registerMidiLearners();
         }
         async onKeyOn(event) {
