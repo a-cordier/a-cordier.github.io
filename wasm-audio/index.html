@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+
+<!--suppress HtmlUnknownTarget -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <title></title>
+    <meta name="description" content="" />
+    <meta name="author" content="36ve" />
+
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto&display=swap"
+      rel="stylesheet"
+    />
+    <script defer src="index.js"></script>
+  </head>
+
+  <body>
+    <div class="content">
+      <child-element></child-element>
+    </div>
+    <script>
+      function isChrome() {
+        var runtimeWindow = window;
+        return (
+          !!runtimeWindow.chrome &&
+          (!!runtimeWindow.chrome.webstore || !!runtimeWindow.chrome.runtime)
+        );
+      }
+
+      var _wasmTestedVersion = 84;
+
+      function isUpToDate() {
+        var version = navigator.userAgent.match(
+          /Chrom(?:e|ium)\/([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)/
+        );
+        if (version == null || version.length != 5) {
+          return false;
+        }
+        version = version.map((v) => parseInt(v, 10));
+        var majorVersion = version[1];
+        return majorVersion >= _wasmTestedVersion;
+      }
+
+      if (!isChrome()) {
+        alert(
+          [
+            "WARNING!",
+            "This application uses Web API that have not been properly standardized yet.",
+            "For now it has been succesfully tested in Chromium browsers only.",
+            "You are adviced to switch to a Chromium browser before going further.",
+          ].join("\n")
+        );
+      } else if (!isUpToDate()) {
+        alert(
+          [
+            "WARNING!",
+            "This application uses recent Web API and should be run in an up to date Chromium browser.",
+            "For now it has been succesfully tested in major version " +
+              _wasmTestedVersion +
+              " only.",
+            "You are adviced to update your browser before going further.",
+          ].join("\n")
+        );
+      }
+    </script>
+  </body>
+
+  <style>
+    :root {
+      --light-color: #68718a;
+      --lighter-color: #c9d2eb;
+      --darker-color: #110517;
+
+      --control-background-color: #110517;
+      --control-top-color: #1f262e;
+      --control-handle-color: #accbe1;
+      --control-cursor-color: #110517;
+
+      --key-sharp-color: var(--light-color);
+      --key-whole-color: var(--lighter-color);
+
+      --overlay-color: var(--light-color);
+
+      --ui-transition-time: 0.4s;
+
+      --oscillator-panel-color: #7a1621;
+      --filter-panel-color: #334452;
+      --lfo-panel-color: #b13f1a;
+
+      --lcd-led-on-color: #b4d455;
+      --lcd-screen-background: darkslategray;
+    }
+
+    html {
+      font-family: "Roboto", sans-serif;
+    }
+
+    body {
+      background-color: var(--darker-color, black);
+    }
+
+    .content {
+      width: 100%;
+    }
+  </style>
+</html>
