@@ -2711,145 +2711,159 @@
         return octaves;
     }
 
-    function onMidiSuccess(midiAccess, midiMessageHandler) {
-        for (const input of midiAccess.inputs.values()) {
-            input.onmidimessage = midiMessageHandler;
+    function times(op, length) {
+        return Array.from({ length }).map((_, i) => op(i));
+    }
+
+    function strPad(n) {
+        return `CHANNEL:${n < 10 ? `0${n}` : `${n}`}`;
+    }
+    function channel(value, name = strPad(value + 1)) {
+        return { value, name };
+    }
+    const length = 16; // max number of Midi channels
+    const MidiChannels = times(channel, length);
+    const MidiOmniChannel = -1;
+    MidiChannels.unshift(channel(MidiOmniChannel, "CHANNEL:ALL"));
+
+    const Status = Object.freeze({
+        NOTE_OFF: 0x08,
+        NOTE_ON: 0x09,
+        NOTE_AFTER_TOUCH: 0x0a,
+        CONTROL_CHANGE: 0x0b,
+        PROGRAM_CHANGE: 0x0c,
+        CHANNEL_AFTER_TOUCH: 0x0d,
+        PITCH_BEND: 0x0e,
+        SYSEX_MESSAGE: 0xf0,
+    });
+    function isNote(message) {
+        return (message &&
+            (message.status === Status.NOTE_ON || message.status === Status.NOTE_OFF));
+    }
+    function isControlChange(message) {
+        return message && message.status === Status.CONTROL_CHANGE;
+    }
+    function Note(data, channel) {
+        return {
+            data: {
+                value: data.getUint8(1),
+                velocity: data.getUint8(2),
+                channel,
+            },
+        };
+    }
+    function NoteOn(data, channel) {
+        return Object.assign(Object.assign({}, Note(data, channel)), { status: Status.NOTE_ON });
+    }
+    function NoteOff(data, channel) {
+        return Object.assign(Object.assign({}, Note(data, channel)), { status: Status.NOTE_OFF });
+    }
+    function NoteAfterTouch(data, channel) {
+        return {
+            status: Status.NOTE_AFTER_TOUCH,
+            data: {
+                note: data.getUint8(0),
+                value: data.getUint8(1),
+                channel,
+            },
+        };
+    }
+    function ControlChange(data, channel) {
+        return {
+            status: Status.CONTROL_CHANGE,
+            data: {
+                control: data.getUint8(1),
+                value: data.getUint8(2),
+                channel,
+            },
+        };
+    }
+    function ProgramChange(data, channel) {
+        return {
+            status: Status.PROGRAM_CHANGE,
+            data: {
+                value: data.getUint8(0),
+                channel,
+            },
+        };
+    }
+    function ChannelAfterTouch(data, channel, offset) {
+        return {
+            status: Status.CHANNEL_AFTER_TOUCH,
+            data: {
+                value: data.getUint8(offset),
+                channel,
+            },
+        };
+    }
+    function newMidiMessage(data, offset = 0) {
+        /* eslint-disable no-param-reassign */
+        const status = data.getUint8(offset) >> 4;
+        const channel = (data.getUint8(offset) & 0xf) + 1;
+        switch (status) {
+            case Status.NOTE_ON:
+                return NoteOn(data, channel);
+            case Status.NOTE_OFF:
+                return NoteOff(data, channel);
+            case Status.NOTE_AFTER_TOUCH:
+                return NoteAfterTouch(data, channel);
+            case Status.CONTROL_CHANGE:
+                return ControlChange(data, channel);
+            case Status.PROGRAM_CHANGE:
+                return ProgramChange(data, channel);
+            case Status.CHANNEL_AFTER_TOUCH:
+                return ChannelAfterTouch(data, channel, offset);
+            // ignore unknown running status
         }
     }
-    async function createMidiController(midiMessageHandler) {
-        const nav = navigator;
-        if (!nav.requestMIDIAccess) {
+
+    var DispatcherEvent;
+    (function (DispatcherEvent) {
+        DispatcherEvent["SHOULD_MIDI_LEARN"] = "SHOULD_MIDI_LEARN";
+        DispatcherEvent["NEW_MIDI_LEARNER"] = "NEW_MIDI_LEARNER";
+        DispatcherEvent["MIDI_MESSAGE"] = "MIDI_MESSAGE";
+    })(DispatcherEvent || (DispatcherEvent = {}));
+    class Dispatcher extends EventTarget {
+        dispatch(actionId, detail) {
+            this.dispatchEvent(new CustomEvent(actionId, { detail }));
+        }
+        subscribe(actionId, callback) {
+            this.addEventListener(actionId, callback);
+        }
+    }
+    const GlobalDispatcher = new Dispatcher();
+
+    async function createMidiController(channel = MidiOmniChannel) {
+        const midiNavigator = navigator;
+        const midiDispatcher = new Dispatcher();
+        let midiAccess;
+        let midiChannel = channel;
+        if (!midiNavigator.requestMIDIAccess) {
             return null;
         }
         try {
-            const midiAccess = await nav.requestMIDIAccess();
-            onMidiSuccess(midiAccess, midiMessageHandler);
+            midiAccess = await midiNavigator.requestMIDIAccess();
         }
         catch (error) {
             return null;
         }
-    }
-
-    const Status = Object.freeze({
-      NOTE_OFF: 0x08,
-      NOTE_ON: 0x09,
-      NOTE_AFTER_TOUCH: 0x0a,
-      CONTROL_CHANGE: 0x0b,
-      PROGRAM_CHANGE: 0x0c,
-      CHANNEL_AFTER_TOUCH: 0x0d,
-      PITCH_BEND: 0x0e,
-      SYSEX_MESSAGE: 0xf0,
-    });
-
-    function isNote(message) {
-      return (
-        message &&
-        (message.status === Status.NOTE_ON || message.status === Status.NOTE_OFF)
-      );
-    }
-
-    function isControlChange(message) {
-      return message && message.status === Status.CONTROL_CHANGE;
-    }
-
-    function Note(data, channel) {
-      return {
-        data: {
-          value: data.getUint8(1),
-          velocity: data.getUint8(2),
-          channel,
-        },
-      };
-    }
-
-    function NoteOn(data, channel) {
-      return {
-        ...Note(data, channel),
-        status: Status.NOTE_ON,
-      };
-    }
-
-    function NoteOff(data, channel) {
-      return {
-        ...Note(data, channel),
-        status: Status.NOTE_OFF,
-      };
-    }
-
-    function NoteAfterTouch(data, channel) {
-      return {
-        status: Status.NOTE_AFTER_TOUCH,
-        data: {
-          note: data.getUint8(0),
-          value: data.getUint8(1),
-          channel,
-        },
-      };
-    }
-
-    function ControlChange(data, channel) {
-      return {
-        status: Status.CONTROL_CHANGE,
-        data: {
-          control: data.getUint8(1),
-          value: data.getUint8(2),
-          channel,
-        },
-      };
-    }
-
-    function ProgramChange(data, channel) {
-      return {
-        status: Status.PROGRAM_CHANGE,
-        data: {
-          value: data.getUint8(0),
-          channel,
-        },
-      };
-    }
-
-    function ChannelAfterTouch(data, channel) {
-      return {
-        status: Status.CHANNEL_AFTER_TOUCH,
-        data: {
-          value: data.getUint8(offset),
-          channel,
-        },
-      };
-    }
-
-    function PitchBend(data, channel) {
-      return {
-        // FIXME (check spec. )
-        status: Status.PITCH_BEND,
-        b1: data.getUint8(0),
-        b2: data.getUint8(offset),
-        channel,
-      };
-    }
-
-    function MidiMessage(data, offset = 0) {
-      /* eslint-disable no-param-reassign */
-      const status = data.getUint8(offset) >> 4;
-      const channel = (data.getUint8(offset) & 0xf) + 1;
-
-      switch (status) {
-        case Status.NOTE_ON:
-          return NoteOn(data, channel);
-        case Status.NOTE_OFF:
-          return NoteOff(data, channel);
-        case Status.NOTE_AFTER_TOUCH:
-          return NoteAfterTouch(data, channel);
-        case Status.CONTROL_CHANGE:
-          return ControlChange(data, channel);
-        case Status.PROGRAM_CHANGE:
-          return ProgramChange(data, channel);
-        case Status.CHANNEL_AFTER_TOUCH:
-          return ChannelAfterTouch(data, channel);
-        case Status.PITCH_BEND:
-          return PitchBend(data, channel);
-        // ignore unknown running status
-      }
+        for (const input of midiAccess.inputs.values()) {
+            input.onmidimessage = (message) => {
+                const midiMessage = newMidiMessage(new DataView(message.data.buffer));
+                dispatchMessageIfNeeded(midiMessage);
+            };
+        }
+        function dispatchMessageIfNeeded(message) {
+            const channel = message.data.channel;
+            if (channel === midiChannel || midiChannel === MidiOmniChannel) {
+                midiDispatcher.dispatch(DispatcherEvent.MIDI_MESSAGE, message);
+            }
+        }
+        return Object.assign(midiDispatcher, {
+            set channel(channel) {
+                midiChannel = channel;
+            },
+        });
     }
 
     const octaves = createMidiOctaves(440).map(mapKeys);
@@ -2918,7 +2932,7 @@
             return octaves[computeOctave(midiValue)][computePitchClassIndex(midiValue)];
         }
         async onMidiMessage(message) {
-            const midiMessage = MidiMessage(new DataView(message.data.buffer));
+            const midiMessage = newMidiMessage(new DataView(message.data.buffer));
             if (!isNote(midiMessage)) {
                 return;
             }
@@ -3139,8 +3153,8 @@
                 const x = i * sliceWidth;
                 this.canvasContext.lineTo(x, y);
             });
-            this.canvasContext.lineWidth = 2;
-            this.canvasContext.strokeStyle = "#00954a";
+            this.canvasContext.lineWidth = 1;
+            this.canvasContext.strokeStyle = "#b4d455";
             this.canvasContext.stroke();
             requestAnimationFrame(this.drawOscilloscope.bind(this));
         }
@@ -3170,21 +3184,6 @@
     Visualizer = __decorate([
         customElement("visualizer-element")
     ], Visualizer);
-
-    var DispatcherEvent;
-    (function (DispatcherEvent) {
-        DispatcherEvent["SHOULD_MIDI_LEARN"] = "SHOULD_MIDI_LEARN";
-        DispatcherEvent["NEW_MIDI_LEARNER"] = "NEW_MIDI_LEARNER";
-    })(DispatcherEvent || (DispatcherEvent = {}));
-    class Dispatcher extends EventTarget {
-        dispatch(actionId, detail) {
-            this.dispatchEvent(new CustomEvent(actionId, { detail }));
-        }
-        subscribe(actionId, callback) {
-            this.addEventListener(actionId, callback);
-        }
-    }
-    const GlobalDispatcher = new Dispatcher();
 
     function scale(value, range, newRange) {
         return Math.round(newRange.min +
@@ -3261,7 +3260,7 @@
             this.updateValue(this.computeStep(event.deltaY, event.altKey ? 0.25 : 1));
         }
         async onMidiMessage(message) {
-            const midiMessage = MidiMessage(new DataView(message.data.buffer));
+            const midiMessage = newMidiMessage(new DataView(message.data.buffer));
             if (isControlChange(midiMessage)) {
                 if (this.isMidiLearning) {
                     this.midiControl = midiMessage.data.control;
@@ -3950,7 +3949,7 @@
         color: var(--panel-wrapper-label-color, white);
         margin: 0.25em auto 1em auto;
         text-align: center;
-        text-transform: lowercase;
+        text-transform: uppercase;
       }
     `;
         }
@@ -4995,6 +4994,96 @@
             [$, _, _, _, _],
             [$, $, $, $, $],
         ],
+        0: [
+            [_, $, $, $, _],
+            [$, _, _, _, $],
+            [$, _, _, $, $],
+            [$, _, $, _, $],
+            [$, $, _, _, $],
+            [$, _, _, _, $],
+            [_, $, $, $, _],
+        ],
+        1: [
+            [_, _, $, $, _],
+            [_, $, _, $, _],
+            [$, _, _, $, _],
+            [_, _, _, $, _],
+            [_, _, _, $, _],
+            [_, _, _, $, _],
+            [_, _, _, $, _],
+        ],
+        2: [
+            [_, $, $, $, _],
+            [$, _, _, _, $],
+            [_, _, _, _, $],
+            [_, _, $, $, _],
+            [_, $, _, _, _],
+            [$, _, _, _, _],
+            [$, $, $, $, $],
+        ],
+        3: [
+            [_, $, $, $, _],
+            [$, _, _, _, $],
+            [_, _, _, _, $],
+            [_, _, $, $, _],
+            [_, _, _, _, $],
+            [$, _, _, _, $],
+            [_, $, $, $, _],
+        ],
+        4: [
+            [_, _, $, $, _],
+            [_, $, _, $, _],
+            [$, _, _, $, _],
+            [$, _, _, $, _],
+            [$, $, $, $, $],
+            [_, _, _, $, _],
+            [_, _, _, $, _],
+        ],
+        5: [
+            [$, $, $, $, $],
+            [$, _, _, _, _],
+            [$, _, _, _, _],
+            [_, $, $, $, _],
+            [_, _, _, _, $],
+            [_, _, _, _, $],
+            [$, $, $, $, _],
+        ],
+        6: [
+            [_, $, $, $, _],
+            [$, _, _, _, $],
+            [$, _, _, _, _],
+            [$, $, $, $, _],
+            [$, _, _, _, $],
+            [$, _, _, _, $],
+            [_, $, $, $, _],
+        ],
+        7: [
+            [$, $, $, $, $],
+            [_, _, _, _, $],
+            [_, _, _, $, _],
+            [_, _, $, _, _],
+            [_, $, _, _, _],
+            [_, $, _, _, _],
+            [_, $, _, _, _],
+        ],
+        8: [
+            [_, $, $, $, _],
+            [$, _, _, _, $],
+            [$, _, _, _, $],
+            [_, $, $, $, _],
+            [$, _, _, _, $],
+            [$, _, _, _, $],
+            [_, $, $, $, _],
+        ],
+        9: [
+            [_, $, $, $, _],
+            [$, _, _, _, $],
+            [$, _, _, _, $],
+            [$, $, $, $, $],
+            [_, _, _, _, $],
+            [_, _, _, _, $],
+            [$, $, $, $, _],
+        ],
         " ": [
             [_, _, _, _, _],
             [_, _, _, _, _],
@@ -5012,6 +5101,24 @@
             [_, _, _, _, _],
             [_, _, _, _, _],
             [$, $, $, $, $],
+        ],
+        ":": [
+            [_, _, _, _, _],
+            [_, _, $, _, _],
+            [_, _, $, _, _],
+            [_, _, _, _, _],
+            [_, _, $, _, _],
+            [_, _, $, _, _],
+            [_, _, _, _, _],
+        ],
+        ".": [
+            [_, _, _, _, _],
+            [_, _, _, _, _],
+            [_, _, _, _, _],
+            [_, _, _, _, _],
+            [_, _, _, _, _],
+            [_, _, $, _, _],
+            [_, _, $, _, _],
         ],
     };
 
@@ -5098,7 +5205,7 @@
 
         border: 1px solid gray;
 
-        background-color: var(--lcd-screen-height, darkslategray);
+        background-color: var(--lcd-screen-background, darkslategray);
 
         padding: 5px;
       }
@@ -5416,6 +5523,201 @@
         customElement("lfo-element")
     ], Lfo);
 
+    var MidiLearnOption;
+    (function (MidiLearnOption) {
+        MidiLearnOption[MidiLearnOption["OSC1_SEMI"] = 0] = "OSC1_SEMI";
+        MidiLearnOption[MidiLearnOption["OSC1_CENT"] = 1] = "OSC1_CENT";
+        MidiLearnOption[MidiLearnOption["OSC_MIX"] = 2] = "OSC_MIX";
+        MidiLearnOption[MidiLearnOption["OSC2_SEMI"] = 3] = "OSC2_SEMI";
+        MidiLearnOption[MidiLearnOption["OSC2_CENT"] = 4] = "OSC2_CENT";
+        MidiLearnOption[MidiLearnOption["CUTOFF"] = 5] = "CUTOFF";
+        MidiLearnOption[MidiLearnOption["RESONANCE"] = 6] = "RESONANCE";
+        MidiLearnOption[MidiLearnOption["ATTACK"] = 7] = "ATTACK";
+        MidiLearnOption[MidiLearnOption["DECAY"] = 8] = "DECAY";
+        MidiLearnOption[MidiLearnOption["SUSTAIN"] = 9] = "SUSTAIN";
+        MidiLearnOption[MidiLearnOption["RELEASE"] = 10] = "RELEASE";
+        MidiLearnOption[MidiLearnOption["LFO1_FREQ"] = 11] = "LFO1_FREQ";
+        MidiLearnOption[MidiLearnOption["LFO1_MOD"] = 12] = "LFO1_MOD";
+        MidiLearnOption[MidiLearnOption["LFO2_FREQ"] = 13] = "LFO2_FREQ";
+        MidiLearnOption[MidiLearnOption["LFO2_MOD"] = 14] = "LFO2_MOD";
+        MidiLearnOption[MidiLearnOption["CUT_MOD"] = 15] = "CUT_MOD";
+        MidiLearnOption[MidiLearnOption["CUT_ATTACK"] = 16] = "CUT_ATTACK";
+        MidiLearnOption[MidiLearnOption["CUT_DECAY"] = 17] = "CUT_DECAY";
+    })(MidiLearnOption || (MidiLearnOption = {}));
+    function toSelectOption(option) {
+        return {
+            name: MidiLearnOption[option].replace(/_/g, " "),
+            value: option,
+        };
+    }
+    const MidiLearnOptions = new SelectOptions([
+        toSelectOption(MidiLearnOption.OSC1_SEMI),
+        toSelectOption(MidiLearnOption.OSC1_CENT),
+        toSelectOption(MidiLearnOption.OSC_MIX),
+        toSelectOption(MidiLearnOption.OSC2_SEMI),
+        toSelectOption(MidiLearnOption.OSC2_CENT),
+        toSelectOption(MidiLearnOption.CUTOFF),
+        toSelectOption(MidiLearnOption.RESONANCE),
+        toSelectOption(MidiLearnOption.ATTACK),
+        toSelectOption(MidiLearnOption.DECAY),
+        toSelectOption(MidiLearnOption.SUSTAIN),
+        toSelectOption(MidiLearnOption.RELEASE),
+        toSelectOption(MidiLearnOption.LFO1_FREQ),
+        toSelectOption(MidiLearnOption.LFO1_MOD),
+        toSelectOption(MidiLearnOption.LFO2_FREQ),
+        toSelectOption(MidiLearnOption.LFO2_MOD),
+        toSelectOption(MidiLearnOption.CUT_MOD),
+        toSelectOption(MidiLearnOption.CUT_ATTACK),
+        toSelectOption(MidiLearnOption.CUT_DECAY),
+    ]);
+
+    const MidiChannelOptions = new SelectOptions(MidiChannels);
+
+    var MenuMode;
+    (function (MenuMode) {
+        MenuMode[MenuMode["MIDI_LEARN"] = 0] = "MIDI_LEARN";
+        MenuMode[MenuMode["MIDI_CHANNEL"] = 1] = "MIDI_CHANNEL";
+        MenuMode[MenuMode["PRESET"] = 2] = "PRESET";
+    })(MenuMode || (MenuMode = {}));
+
+    let Menu = class Menu extends LitElement {
+        constructor() {
+            super(...arguments);
+            this.mode = MenuMode.MIDI_CHANNEL;
+        }
+        render() {
+            return html `
+      <div class="menu">
+        <div class="button-wrapper">
+          <button
+            class="${this.computeButtonClasses(MenuMode.PRESET)}"
+            @click=${this.switchModeHandler(MenuMode.MIDI_CHANNEL)}
+          >
+            PRESET
+          </button>
+        </div>
+        <div class="button-wrapper">
+          <button
+            class="${this.computeButtonClasses(MenuMode.MIDI_CHANNEL)}"
+            @click=${this.switchModeHandler(MenuMode.MIDI_CHANNEL)}
+          >
+            CHANNEL
+          </button>
+        </div>
+        <div class="button-wrapper">
+          <button
+            class="${this.computeButtonClasses(MenuMode.MIDI_LEARN)}"
+            @click=${this.switchModeHandler(MenuMode.MIDI_LEARN)}
+          >
+            LEARN
+          </button>
+        </div>
+        <div class="lcd-wrapper">
+          <lcd-element .text=${this.options.getCurrent().name}></lcd-element>
+        </div>
+        <div class="button-wrapper select">
+          <button @click=${this.previousOption}>PREV</button>
+        </div>
+        <div class="button-wrapper select">
+          <button @click=${this.nextOption}>NEXT</button>
+        </div>
+      </div>
+    `;
+        }
+        computeButtonClasses(mode) {
+            return classMap({
+                active: this.mode === mode,
+            });
+        }
+        switchModeHandler(mode) {
+            switch (mode) {
+                case MenuMode.MIDI_CHANNEL:
+                    return () => {
+                        this.mode = MenuMode.MIDI_CHANNEL;
+                        this.requestUpdate();
+                    };
+                case MenuMode.MIDI_LEARN:
+                    return () => {
+                        this.mode = MenuMode.MIDI_LEARN;
+                        this.requestUpdate();
+                    };
+            }
+        }
+        nextOption() {
+            this.options.next();
+            this.requestUpdate();
+        }
+        previousOption() {
+            this.options.previous();
+            this.requestUpdate();
+        }
+        get options() {
+            switch (this.mode) {
+                case MenuMode.MIDI_CHANNEL:
+                    return MidiChannelOptions;
+                case MenuMode.MIDI_LEARN:
+                default:
+                    return MidiLearnOptions;
+            }
+        }
+        static get styles() {
+            // noinspection CssUnresolvedCustomProperty
+            return css `
+      .menu {
+        display: flex;
+        --lcd-screen-height: 15px;
+        --lcd-screen-width: 130px;
+      }
+
+      .lcd-wrapper {
+        margin: 0.1em 0.5em 0 0.5em;
+      }
+
+      .menu .button-wrapper button {
+        font-size: var(--button-font-size, 0.5em);
+
+        background-color: var(--lighter-color);
+        border: 1px solid var(--light-color, #ccc);
+        box-shadow: 0px 1px 1px 1px var(--control-background-color, #ccc);
+        transition: all 0.1s ease-in-out;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        cursor: pointer;
+
+        height: 100%;
+
+        color: black;
+      }
+
+      .menu .button-wrapper button:focus {
+        outline: none;
+      }
+
+      .menu .button-wrapper button.active {
+        background-color: var(--control-handle-color);
+        color: white;
+        box-shadow: 0px 1px 1px 1px var(--control-background-color, #ccc);
+        transition: all 0.1s ease-in-out;
+        cursor: auto;
+      }
+
+      .menu .button-wrapper.select button:active {
+        transform: scale(0.999);
+      }
+    `;
+        }
+    };
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Menu.prototype, "mode", void 0);
+    Menu = __decorate([
+        customElement("menu-element")
+    ], Menu);
+
     function createStartMessage(time) {
         return {
             type: "START",
@@ -5552,7 +5854,7 @@
             this.state = {
                 osc1: {
                     mode: OscillatorMode.SAWTOOTH,
-                    semiShift: 0,
+                    semiShift: 24,
                     centShift: 0,
                 },
                 osc1Envelope: {
@@ -5917,8 +6219,10 @@
             height="300"
           ></visualizer-element>
         </div>
-        <switch-element @change="${this.notifyMidiLearners}"></switch-element>
         <div class="synth">
+          <div class="menu">
+            <menu-element .analyser=${this.analyzer}></menu-element>
+          </div>
           <div class="oscillators">
             <oscillator-element
               label="Osc 1"
@@ -5940,7 +6244,7 @@
             </div>
             <oscillator-element
               label="Osc 2"
-              .state=${this.voiceManager.osc1}
+              .state=${this.voiceManager.osc2}
               @change=${this.onOsc2Change}
               .shouldMidiLearn="${this.shouldMidiLearn}"
             ></oscillator-element>
@@ -6000,7 +6304,7 @@
       }
 
       .menu {
-        margin: 10px 0;
+        margin: 0 0 10px 0;
       }
 
       .synth {
