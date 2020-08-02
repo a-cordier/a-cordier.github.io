@@ -2658,6 +2658,21 @@
         return (octave + 1) * 12 + pitchClasses.indexOf(pitchClass);
     }
     /**
+     * Computes the pitch class as a string representation and octave for the given midi value
+     * @param {number} midiValue - midi value for note
+     * @returns {Note}
+     */
+    function midiToNote(midiValue) {
+        const pitchClassIndex = (midiValue - 12 * 2) % 12;
+        const octave = (midiValue - pitchClassIndex - 12) / 12;
+        return {
+            pitchClass: pitchClasses[pitchClassIndex],
+            octave,
+            frequency: midiToFrequency(midiValue),
+            midiValue,
+        };
+    }
+    /**
      * Computes the pitch class as a number from 0 to 11
      * @param midiValue - midi value for note
      * @returns {number}
@@ -2710,21 +2725,6 @@
         }
         return octaves;
     }
-
-    function times(op, length) {
-        return Array.from({ length }).map((_, i) => op(i));
-    }
-
-    function strPad(n) {
-        return `CHANNEL:${n < 10 ? `0${n}` : `${n}`}`;
-    }
-    function channel(value, name = strPad(value + 1)) {
-        return { value, name };
-    }
-    const length = 16; // max number of Midi channels
-    const MidiChannels = times(channel, length);
-    const MidiOmniChannel = -1;
-    MidiChannels.unshift(channel(MidiOmniChannel, "CHANNEL:ALL"));
 
     const Status = Object.freeze({
         NOTE_OFF: 0x08,
@@ -2817,55 +2817,6 @@
         }
     }
 
-    var DispatcherEvent;
-    (function (DispatcherEvent) {
-        DispatcherEvent["SHOULD_MIDI_LEARN"] = "SHOULD_MIDI_LEARN";
-        DispatcherEvent["NEW_MIDI_LEARNER"] = "NEW_MIDI_LEARNER";
-        DispatcherEvent["MIDI_MESSAGE"] = "MIDI_MESSAGE";
-    })(DispatcherEvent || (DispatcherEvent = {}));
-    class Dispatcher extends EventTarget {
-        dispatch(actionId, detail) {
-            this.dispatchEvent(new CustomEvent(actionId, { detail }));
-        }
-        subscribe(actionId, callback) {
-            this.addEventListener(actionId, callback);
-        }
-    }
-    const GlobalDispatcher = new Dispatcher();
-
-    async function createMidiController(channel = MidiOmniChannel) {
-        const midiNavigator = navigator;
-        const midiDispatcher = new Dispatcher();
-        let midiAccess;
-        let midiChannel = channel;
-        if (!midiNavigator.requestMIDIAccess) {
-            return null;
-        }
-        try {
-            midiAccess = await midiNavigator.requestMIDIAccess();
-        }
-        catch (error) {
-            return null;
-        }
-        for (const input of midiAccess.inputs.values()) {
-            input.onmidimessage = (message) => {
-                const midiMessage = newMidiMessage(new DataView(message.data.buffer));
-                dispatchMessageIfNeeded(midiMessage);
-            };
-        }
-        function dispatchMessageIfNeeded(message) {
-            const channel = message.data.channel;
-            if (channel === midiChannel || midiChannel === MidiOmniChannel) {
-                midiDispatcher.dispatch(DispatcherEvent.MIDI_MESSAGE, message);
-            }
-        }
-        return Object.assign(midiDispatcher, {
-            set channel(channel) {
-                midiChannel = channel;
-            },
-        });
-    }
-
     const octaves = createMidiOctaves(440).map(mapKeys);
     function mapKeys(octave) {
         return octave.map((note) => {
@@ -2902,7 +2853,7 @@
             document.addEventListener("mouseup", this.mouseUp.bind(this));
         }
         async registerMidiHandler() {
-            await createMidiController(this.onMidiMessage.bind(this));
+            // TODO: HANDLE FROM VOICE MANAGER
         }
         mouseUp() {
             if (!!this.mouseControlledKey) {
@@ -3168,6 +3119,15 @@
       ></canvas>
     `;
         }
+        static get styles() {
+            // noinspection CssUnresolvedCustomProperty
+            return css `
+      canvas {
+        border: 1px solid grey;
+        border-radius: 0.25rem;
+      }
+    `;
+        }
     };
     __decorate([
         property({ attribute: false }),
@@ -3184,6 +3144,14 @@
     Visualizer = __decorate([
         customElement("visualizer-element")
     ], Visualizer);
+
+    function clamp(range, value) {
+        if (value >= range.max)
+            return range.max;
+        if (value <= range.min)
+            return range.min;
+        return value;
+    }
 
     function scale(value, range, newRange) {
         return Math.round(newRange.min +
@@ -3205,38 +3173,15 @@
             this.value = 64;
             this.step = 1;
             this.angle = 0;
-            this.shouldMidiLearn = false;
-            this.isMidiLearning = false;
         }
         async connectedCallback() {
             super.connectedCallback();
             this.updateAngle();
-            await this.registerMidiHandler();
-            await this.registerDispatchHandlers();
-        }
-        async registerDispatchHandlers() {
-            GlobalDispatcher.subscribe(DispatcherEvent.NEW_MIDI_LEARNER, (event) => {
-                if (event.detail.value === this) {
-                    this.isMidiLearning = true;
-                    this.requestUpdate();
-                }
-                //this.shouldMidiLearn = false;
-            });
-            GlobalDispatcher.subscribe(DispatcherEvent.SHOULD_MIDI_LEARN, (event) => {
-                this.shouldMidiLearn = event.detail.value;
-                if (!this.shouldMidiLearn) {
-                    this.isMidiLearning = false;
-                    this.requestUpdate();
-                }
-            });
-        }
-        async registerMidiHandler() {
-            await createMidiController(this.onMidiMessage.bind(this));
         }
         toggleActive() {
             const drag = (event) => {
                 event.preventDefault();
-                this.updateValue(event.movementY);
+                this.updateValue(this.computeStep(-event.movementY, event.altKey));
             };
             const destroy = () => {
                 document.removeEventListener("mouseup", destroy);
@@ -3245,50 +3190,22 @@
             document.addEventListener("mousemove", drag);
             document.addEventListener("mouseup", destroy);
         }
-        toggleMidiLearn() {
-            if (this.shouldMidiLearn) {
-                GlobalDispatcher.dispatch(DispatcherEvent.NEW_MIDI_LEARNER, {
-                    value: this,
-                });
-            }
-        }
-        get midiLearnMessage() {
-            return this.shouldMidiLearn ? "MIDI" : "LEARNING";
-        }
         onWheel(event) {
             event.preventDefault();
-            this.updateValue(this.computeStep(event.deltaY, event.altKey ? 0.25 : 1));
-        }
-        async onMidiMessage(message) {
-            const midiMessage = newMidiMessage(new DataView(message.data.buffer));
-            if (isControlChange(midiMessage)) {
-                if (this.isMidiLearning) {
-                    this.midiControl = midiMessage.data.control;
-                    this.isMidiLearning = false;
-                }
-                if (this.midiControl === midiMessage.data.control) {
-                    this.value = midiMessage.data.value;
-                }
-            }
+            this.updateValue(this.computeStep(event.deltaY, event.altKey));
         }
         updateAngle() {
             this.angle = scale(this.value, this.range, ANGLE_RANGE);
         }
-        updateValue(increment) {
-            if (increment < 0 && this.value > this.range.min) {
-                this.value += increment;
-            }
-            if (increment > 0 && this.value < this.range.max) {
-                this.value += increment;
-            }
+        updateValue(step) {
+            this.value = clamp(this.range, this.value + step);
         }
-        computeStep(increment, multiplier = 1) {
-            if (increment < 0 && this.value > this.range.min) {
-                this.value -= this.step * multiplier;
-            }
-            if (increment > 0 && this.value < this.range.max) {
-                this.value += this.step * multiplier;
-            }
+        computeStep(increment, sharp = false) {
+            return this.computeStepMultiplier(increment, sharp) * this.step;
+        }
+        computeStepMultiplier(increment, sharp = false) {
+            const multiplier = increment < 0 ? -1 : 1;
+            return sharp ? multiplier * 0.25 : multiplier;
         }
         updated(changedProperties) {
             if (changedProperties.get("value")) {
@@ -3296,19 +3213,9 @@
                 this.dispatchEvent(new CustomEvent("change", { detail: { value: this.value } }));
             }
         }
-        computeMidiLearnClasses() {
-            return classMap({
-                "should-learn": this.shouldMidiLearn,
-                "is-learning": this.isMidiLearning,
-            });
-        }
         render() {
             return html `
-      <div
-        class="knob-wrapper"
-        class="knob-wrapper"
-        @click="${this.toggleMidiLearn}"
-      >
+      <div class="knob-wrapper" class="knob-wrapper">
         <svg
           class="knob"
           shape-rendering="geometricPrecision"
@@ -3352,21 +3259,6 @@
             <circle class="knob__top" r="150" cy="250" cx="250" />
           </g>
         </svg>
-        <div
-          class="midi-learn top-left-corner ${this.computeMidiLearnClasses()}"
-        ></div>
-        <div
-          class="midi-learn top-right-corner ${this.computeMidiLearnClasses()}"
-        ></div>
-        <div
-          class="midi-learn bottom-right-corner ${this.computeMidiLearnClasses()}"
-        ></div>
-        <div
-          class="midi-learn bottom-left-corner ${this.computeMidiLearnClasses()}"
-        ></div>
-        <div class="midi-learn-label ${this.computeMidiLearnClasses()}">
-          ${this.midiLearnMessage}
-        </div>
         <div class="label">${this.label}</div>
       </div>
     `;
@@ -3402,91 +3294,17 @@
         fill: var(--control-top-color, #ccc);
       }
 
+      @keyframes focus {
+        0% {
+          fill: var(--control-top-color, #ccc);
+        }
+        50% {
+          fill: var(--control-color-focused, #ccc);
+        }
+      }
+
       .knob__cursor {
         fill: var(--control-cursor-color, #ccc);
-      }
-
-      .midi-learn {
-        position: absolute;
-        height: 30%;
-        width: 30%;
-
-        display: none;
-      }
-
-      .midi-learn.should-learn {
-        display: block;
-      }
-
-      .midi-learn.is-learning {
-        display: block;
-        animation: blink 0.5s step-end infinite alternate;
-      }
-
-      .midi-learn.top-left-corner {
-        top: -5px;
-        left: -5px;
-
-        border-left: 3px solid var(--control-handle-color);
-        border-top: 3px solid var(--control-handle-color);
-      }
-
-      .midi-learn.top-right-corner {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-
-        height: 33%;
-        width: 33%;
-
-        border-right: 3px solid var(--control-handle-color);
-        border-top: 3px solid var(--control-handle-color);
-      }
-
-      .midi-learn.bottom-right-corner {
-        position: absolute;
-        bottom: -5px;
-        right: -5px;
-
-        height: 33%;
-        width: 33%;
-
-        border-right: 3px solid var(--control-handle-color);
-        border-bottom: 3px solid var(--control-handle-color);
-      }
-
-      .midi-learn.bottom-left-corner {
-        position: absolute;
-        bottom: -5px;
-        left: -5px;
-
-        height: 33%;
-        width: 33%;
-
-        border-left: 3px solid var(--control-handle-color);
-        border-bottom: 3px solid var(--control-handle-color);
-      }
-
-      .midi-learn-label {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-
-        display: none;
-
-        font-size: 0.5vw;
-        color: var(--lighter-color);
-      }
-
-      .midi-learn-label.should-learn,
-      .midi-learn-label.is-learning {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-
-        z-index: 1;
       }
 
       .label {
@@ -3494,12 +3312,6 @@
         color: var(--lighter-color);
         display: flex;
         justify-content: center;
-      }
-
-      @keyframes blink {
-        50% {
-          opacity: 0;
-        }
       }
     `;
         }
@@ -3521,104 +3333,12 @@
         __metadata("design:type", Object)
     ], Knob.prototype, "angle", void 0);
     __decorate([
-        property({ type: Boolean }),
-        __metadata("design:type", Object)
-    ], Knob.prototype, "shouldMidiLearn", void 0);
-    __decorate([
         property({ type: String }),
         __metadata("design:type", String)
     ], Knob.prototype, "label", void 0);
     Knob = __decorate([
         customElement("knob-element")
     ], Knob);
-
-    let Switch = class Switch extends LitElement {
-        async onChange(event) {
-            this.dispatchEvent(new CustomEvent("change", {
-                detail: { value: event.currentTarget.checked },
-            }));
-        }
-        render() {
-            return html `
-      <label class="switch">
-        <input type="checkbox" @change="${this.onChange}" />
-        <span class="slider"></span>
-      </label>
-      <label>${this.label}</label>
-    `;
-        }
-        static get styles() {
-            // noinspection CssUnresolvedCustomProperty
-            return css `
-      .switch {
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        height: 34px;
-      }
-
-      .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-
-      .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: var(--lighter-color, #ccc);
-        transition: var(--ui-transition-time, 0.4s);
-      }
-
-      .slider:before {
-        position: absolute;
-        content: "";
-        height: 26px;
-        width: 26px;
-        left: 4px;
-        bottom: 4px;
-        background-color: var(--light-color, white);
-        transition: var(--ui-transition-time, 0.4s);
-      }
-
-      input:checked + .slider {
-        background-color: var(--control-handle-color, #ccc);
-      }
-
-      input:checked + .slider:before {
-        background-color: white;
-      }
-
-      input:focus + .slider {
-        box-shadow: 0 0 1px var(--control-handle-color, #ccc);
-      }
-
-      input:checked + .slider:before {
-        -webkit-transform: translateX(26px);
-        -ms-transform: translateX(26px);
-        transform: translateX(26px);
-      }
-
-      .label {
-        font-size: 0.8em;
-        color: var(--lighter-color);
-        display: flex;
-        justify-content: center;
-      }
-    `;
-        }
-    };
-    __decorate([
-        property({ type: String }),
-        __metadata("design:type", String)
-    ], Switch.prototype, "label", void 0);
-    Switch = __decorate([
-        customElement("switch-element")
-    ], Switch);
 
     let SawWaveIcon = class SawWaveIcon extends LitElement {
         render() {
@@ -3966,35 +3686,21 @@
         constructor() {
             super();
             this.label = "Osc";
-            this.state = {
-                mode: OscillatorMode.SAWTOOTH,
-                semiShift: 0,
-                centShift: 0,
-            };
-            this.shouldMidiLearn = false;
         }
         connectedCallback() {
             super.connectedCallback();
         }
         onSemiShift(event) {
-            if (event.detail.value < 39 || event.detail.value > 87) {
-                return;
-            }
-            const value = event.detail.value - 39 - 24; // mapped to [-24;24]
-            this.dispatchChange(OscillatorEvent.SEMI_SHIFT, value);
+            this.dispatchChange(OscillatorEvent.SEMI_SHIFT, event.detail.value);
         }
         get semiShiftValue() {
-            return this.state.semiShift + 39 + 24;
+            return this.state.semiShift.value;
         }
         onCentShift(event) {
-            if (event.detail.value < 13 || event.detail.value > 113) {
-                return;
-            }
-            const value = event.detail.value - 13 - 50; // mapped to [-50;50]
-            this.dispatchChange(OscillatorEvent.CENT_SHIFT, value);
+            this.dispatchChange(OscillatorEvent.CENT_SHIFT, event.detail.value);
         }
         get centShiftValue() {
-            return this.state.centShift + 13 + 50;
+            return this.state.centShift.value;
         }
         onWaveFormChange(event) {
             this.dispatchChange(OscillatorEvent.WAVE_FORM, event.detail.value);
@@ -4008,7 +3714,7 @@
         <div class="oscillator-controls">
           <div class="wave-control">
             <wave-selector-element
-              .value=${this.state.mode}
+              .value=${this.state.mode.value}
               @change=${this.onWaveFormChange}
             ></wave-selector-element>
           </div>
@@ -4018,7 +3724,6 @@
                 <knob-element
                   .value=${this.semiShiftValue}
                   @change=${this.onSemiShift}
-                  .shouldMidiLearn=${this.shouldMidiLearn}
                 ></knob-element>
               </div>
               <label>semi</label>
@@ -4028,7 +3733,6 @@
                 <knob-element
                   .value=${this.centShiftValue}
                   @change=${this.onCentShift}
-                  .shouldMidiLearn=${this.shouldMidiLearn}
                 ></knob-element>
               </div>
               <label>cents</label>
@@ -4103,14 +3807,17 @@
         property({ type: Object }),
         __metadata("design:type", Object)
     ], Oscillator.prototype, "state", void 0);
-    __decorate([
-        property({ type: Boolean }),
-        __metadata("design:type", Object)
-    ], Oscillator.prototype, "shouldMidiLearn", void 0);
     Oscillator = __decorate([
         customElement("oscillator-element"),
         __metadata("design:paramtypes", [])
     ], Oscillator);
+
+    var FilterEvent;
+    (function (FilterEvent) {
+        FilterEvent[FilterEvent["MODE"] = 0] = "MODE";
+        FilterEvent[FilterEvent["CUTOFF"] = 1] = "CUTOFF";
+        FilterEvent[FilterEvent["RESONANCE"] = 2] = "RESONANCE";
+    })(FilterEvent || (FilterEvent = {}));
 
     var FilterMode;
     (function (FilterMode) {
@@ -4119,13 +3826,6 @@
         FilterMode["BANDPASS"] = "BANDPASS";
         FilterMode["HIGHPASS"] = "HIGHPASS";
     })(FilterMode || (FilterMode = {}));
-
-    var FilterEvent;
-    (function (FilterEvent) {
-        FilterEvent[FilterEvent["MODE"] = 0] = "MODE";
-        FilterEvent[FilterEvent["CUTOFF"] = 1] = "CUTOFF";
-        FilterEvent[FilterEvent["RESONANCE"] = 2] = "RESONANCE";
-    })(FilterEvent || (FilterEvent = {}));
 
     let FilterSelector = class FilterSelector extends LitElement {
         constructor() {
@@ -4242,15 +3942,6 @@
     ], FilterSelector);
 
     let Filter = class Filter extends LitElement {
-        constructor() {
-            super(...arguments);
-            this.shouldMidiLearn = false;
-            this.state = {
-                mode: FilterMode.LOWPASS,
-                cutoff: 0,
-                resonance: 0,
-            };
-        }
         onCutoffChange(event) {
             this.dispatchChange(FilterEvent.CUTOFF, event.detail.value);
         }
@@ -4269,7 +3960,7 @@
         <div class="filter-controls">
           <div class="mode-control">
             <filter-selector-element
-              .value=${this.state.mode}
+              .value=${this.state.mode.value}
               @change=${this.onTypeChange}
             ></filter-selector-element>
           </div>
@@ -4277,9 +3968,8 @@
             <div class="frequency-control">
               <div class="cutoff-control">
                 <knob-element
-                  .value=${this.state.cutoff}
+                  .value=${this.state.cutoff.value}
                   @change=${this.onCutoffChange}
-                  .shouldMidiLearn="${this.shouldMidiLearn}"
                 ></knob-element>
               </div>
               <label>cutoff</label>
@@ -4287,9 +3977,8 @@
             <div class="frequency-control">
               <div class="resonance-control">
                 <knob-element
-                  .value=${this.state.resonance}
+                  .value=${this.state.resonance.value}
                   @change=${this.onResonanceChange}
-                  .shouldMidiLearn="${this.shouldMidiLearn}"
                 ></knob-element>
               </div>
               <label>reson.</label>
@@ -4349,10 +4038,6 @@
     `;
         }
     };
-    __decorate([
-        property({ type: Boolean }),
-        __metadata("design:type", Object)
-    ], Filter.prototype, "shouldMidiLearn", void 0);
     __decorate([
         property({ type: Object }),
         __metadata("design:type", Object)
@@ -4565,15 +4250,8 @@
 
     let Envelope = class Envelope extends LitElement {
         constructor() {
-            super(...arguments);
-            this.shouldMidiLearn = false;
+            super();
             this.label = "Envelope";
-            this.state = {
-                attack: 0,
-                decay: 127 / 2,
-                sustain: 100,
-                release: 12,
-            };
         }
         onAttackChange(event) {
             this.dispatchChange(OscillatorEnvelopeEvent.ATTACK, event.detail.value);
@@ -4596,22 +4274,22 @@
         <div class="envelope-controls">
           <fader-element
             label="A"
-            .value=${this.state.attack}
+            .value=${this.state.attack.value}
             @change=${this.onAttackChange}
           ></fader-element>
           <fader-element
             label="D"
-            .value=${this.state.decay}
+            .value=${this.state.decay.value}
             @change=${this.onDecayChange}
           ></fader-element>
           <fader-element
             label="S"
-            .value=${this.state.sustain}
+            .value=${this.state.sustain.value}
             @change=${this.onSustainChange}
           ></fader-element>
           <fader-element
             label="R"
-            .value=${this.state.release}
+            .value=${this.state.release.value}
             @change=${this.onReleaseChange}
           ></fader-element>
         </div>
@@ -4638,10 +4316,6 @@
         }
     };
     __decorate([
-        property({ type: Boolean }),
-        __metadata("design:type", Object)
-    ], Envelope.prototype, "shouldMidiLearn", void 0);
-    __decorate([
         property({ type: String }),
         __metadata("design:type", Object)
     ], Envelope.prototype, "label", void 0);
@@ -4650,7 +4324,8 @@
         __metadata("design:type", Object)
     ], Envelope.prototype, "state", void 0);
     Envelope = __decorate([
-        customElement("envelope-element")
+        customElement("envelope-element"),
+        __metadata("design:paramtypes", [])
     ], Envelope);
 
     var FilterEnvelopeEvent;
@@ -4661,15 +4336,6 @@
     })(FilterEnvelopeEvent || (FilterEnvelopeEvent = {}));
 
     let FilterEnvelope = class FilterEnvelope extends LitElement {
-        constructor() {
-            super(...arguments);
-            this.shouldMidiLearn = false;
-            this.state = {
-                attack: 0,
-                decay: 127 / 2,
-                amount: 0,
-            };
-        }
         onAttackChange(event) {
             this.dispatchChange(FilterEnvelopeEvent.ATTACK, event.detail.value);
         }
@@ -4689,21 +4355,20 @@
           <div class="time-controls">
             <fader-element
               label="A"
-              .value=${this.state.attack}
+              .value=${this.state.attack.value}
               @change=${this.onAttackChange}
             ></fader-element>
             <fader-element
               label="D"
-              .value=${this.state.decay}
+              .value=${this.state.decay.value}
               @change=${this.onDecayChange}
             ></fader-element>
           </div>
           <div class="mod-control">
             <knob-element
               label="mod."
-              .value=${this.state.amount}
+              .value=${this.state.amount.value}
               @change=${this.onAmountChange}
-              .shouldMidiLearn="${this.shouldMidiLearn}"
             ></knob-element>
           </div>
         </div>
@@ -4737,10 +4402,6 @@
     `;
         }
     };
-    __decorate([
-        property({ type: Boolean }),
-        __metadata("design:type", Object)
-    ], FilterEnvelope.prototype, "shouldMidiLearn", void 0);
     __decorate([
         property({ type: Object }),
         __metadata("design:type", Object)
@@ -5249,11 +4910,13 @@
             if (++this.currentOption >= this.options.length) {
                 this.currentOption = 0;
             }
+            return this;
         }
         previous() {
             if (--this.currentOption < 0) {
                 this.currentOption = this.options.length - 1;
             }
+            return this;
         }
         getCurrent() {
             return this.options[this.currentOption];
@@ -5380,17 +5043,15 @@
         constructor() {
             super(...arguments);
             this.label = "LFO";
-            this.state = {
-                mode: OscillatorMode.SAWTOOTH,
-                destinations: lfoDestinations,
-                frequency: 127 / 2,
-                modAmount: 0,
-            };
+            this.destinations = new SelectOptions([
+                { value: LfoDestination.OSCILLATOR_MIX, name: "OSC MIX" },
+                { value: LfoDestination.FREQUENCY, name: "FREQUENCY" },
+                { value: LfoDestination.CUTOFF, name: "CUTOFF" },
+                { value: LfoDestination.RESONANCE, name: "RESONANCE" },
+            ]);
             this.shouldMidiLearn = false;
         }
         onFrequencyChange(event) {
-            this.state.destinations.next();
-            this.requestUpdate();
             this.dispatchChange(LfoEvent.FREQUENCY, event.detail.value);
         }
         onModAmountChange(event) {
@@ -5411,13 +5072,13 @@
         <div class="lfo-controls">
           <div class="wave-control">
             <wave-selector-element
-              .value=${this.state.mode}
+              .value=${this.state.mode.value}
               @change=${this.onWaveFormChange}
             ></wave-selector-element>
           </div>
           <div class="destination-control">
             <lcd-selector-element
-              .options=${this.state.destinations}
+              .options=${this.destinations}
               @change=${this.onDestinationChange}
             ></lcd-selector-element>
           </div>
@@ -5425,7 +5086,7 @@
             <div class="modulation-control">
               <div class="frequency-control">
                 <knob-element
-                  .value=${this.state.frequency}
+                  .value=${this.state.frequency.value}
                   @change=${this.onFrequencyChange}
                   .shouldMidiLearn=${this.shouldMidiLearn}
                 ></knob-element>
@@ -5435,7 +5096,7 @@
             <div class="modulation-control">
               <div class="mod-amount-control">
                 <knob-element
-                  .value=${this.state.modAmount}
+                  .value=${this.state.modAmount.value}
                   @change=${this.onModAmountChange}
                   .shouldMidiLearn=${this.shouldMidiLearn}
                 ></knob-element>
@@ -5523,53 +5184,69 @@
         customElement("lfo-element")
     ], Lfo);
 
-    var MidiLearnOption;
-    (function (MidiLearnOption) {
-        MidiLearnOption[MidiLearnOption["OSC1_SEMI"] = 0] = "OSC1_SEMI";
-        MidiLearnOption[MidiLearnOption["OSC1_CENT"] = 1] = "OSC1_CENT";
-        MidiLearnOption[MidiLearnOption["OSC_MIX"] = 2] = "OSC_MIX";
-        MidiLearnOption[MidiLearnOption["OSC2_SEMI"] = 3] = "OSC2_SEMI";
-        MidiLearnOption[MidiLearnOption["OSC2_CENT"] = 4] = "OSC2_CENT";
-        MidiLearnOption[MidiLearnOption["CUTOFF"] = 5] = "CUTOFF";
-        MidiLearnOption[MidiLearnOption["RESONANCE"] = 6] = "RESONANCE";
-        MidiLearnOption[MidiLearnOption["ATTACK"] = 7] = "ATTACK";
-        MidiLearnOption[MidiLearnOption["DECAY"] = 8] = "DECAY";
-        MidiLearnOption[MidiLearnOption["SUSTAIN"] = 9] = "SUSTAIN";
-        MidiLearnOption[MidiLearnOption["RELEASE"] = 10] = "RELEASE";
-        MidiLearnOption[MidiLearnOption["LFO1_FREQ"] = 11] = "LFO1_FREQ";
-        MidiLearnOption[MidiLearnOption["LFO1_MOD"] = 12] = "LFO1_MOD";
-        MidiLearnOption[MidiLearnOption["LFO2_FREQ"] = 13] = "LFO2_FREQ";
-        MidiLearnOption[MidiLearnOption["LFO2_MOD"] = 14] = "LFO2_MOD";
-        MidiLearnOption[MidiLearnOption["CUT_MOD"] = 15] = "CUT_MOD";
-        MidiLearnOption[MidiLearnOption["CUT_ATTACK"] = 16] = "CUT_ATTACK";
-        MidiLearnOption[MidiLearnOption["CUT_DECAY"] = 17] = "CUT_DECAY";
-    })(MidiLearnOption || (MidiLearnOption = {}));
+    var MidiControlID;
+    (function (MidiControlID) {
+        MidiControlID[MidiControlID["NONE"] = -1] = "NONE";
+        MidiControlID[MidiControlID["OSC1_SEMI"] = 0] = "OSC1_SEMI";
+        MidiControlID[MidiControlID["OSC1_CENT"] = 1] = "OSC1_CENT";
+        MidiControlID[MidiControlID["OSC_MIX"] = 2] = "OSC_MIX";
+        MidiControlID[MidiControlID["OSC2_SEMI"] = 3] = "OSC2_SEMI";
+        MidiControlID[MidiControlID["OSC2_CENT"] = 4] = "OSC2_CENT";
+        MidiControlID[MidiControlID["CUTOFF"] = 5] = "CUTOFF";
+        MidiControlID[MidiControlID["RESONANCE"] = 6] = "RESONANCE";
+        MidiControlID[MidiControlID["ATTACK"] = 7] = "ATTACK";
+        MidiControlID[MidiControlID["DECAY"] = 8] = "DECAY";
+        MidiControlID[MidiControlID["SUSTAIN"] = 9] = "SUSTAIN";
+        MidiControlID[MidiControlID["RELEASE"] = 10] = "RELEASE";
+        MidiControlID[MidiControlID["LFO1_FREQ"] = 11] = "LFO1_FREQ";
+        MidiControlID[MidiControlID["LFO1_MOD"] = 12] = "LFO1_MOD";
+        MidiControlID[MidiControlID["LFO2_FREQ"] = 13] = "LFO2_FREQ";
+        MidiControlID[MidiControlID["LFO2_MOD"] = 14] = "LFO2_MOD";
+        MidiControlID[MidiControlID["CUT_MOD"] = 15] = "CUT_MOD";
+        MidiControlID[MidiControlID["CUT_ATTACK"] = 16] = "CUT_ATTACK";
+        MidiControlID[MidiControlID["CUT_DECAY"] = 17] = "CUT_DECAY";
+    })(MidiControlID || (MidiControlID = {}));
     function toSelectOption(option) {
         return {
-            name: MidiLearnOption[option].replace(/_/g, " "),
+            name: MidiControlID[option].replace(/_/g, " "),
             value: option,
         };
     }
     const MidiLearnOptions = new SelectOptions([
-        toSelectOption(MidiLearnOption.OSC1_SEMI),
-        toSelectOption(MidiLearnOption.OSC1_CENT),
-        toSelectOption(MidiLearnOption.OSC_MIX),
-        toSelectOption(MidiLearnOption.OSC2_SEMI),
-        toSelectOption(MidiLearnOption.OSC2_CENT),
-        toSelectOption(MidiLearnOption.CUTOFF),
-        toSelectOption(MidiLearnOption.RESONANCE),
-        toSelectOption(MidiLearnOption.ATTACK),
-        toSelectOption(MidiLearnOption.DECAY),
-        toSelectOption(MidiLearnOption.SUSTAIN),
-        toSelectOption(MidiLearnOption.RELEASE),
-        toSelectOption(MidiLearnOption.LFO1_FREQ),
-        toSelectOption(MidiLearnOption.LFO1_MOD),
-        toSelectOption(MidiLearnOption.LFO2_FREQ),
-        toSelectOption(MidiLearnOption.LFO2_MOD),
-        toSelectOption(MidiLearnOption.CUT_MOD),
-        toSelectOption(MidiLearnOption.CUT_ATTACK),
-        toSelectOption(MidiLearnOption.CUT_DECAY),
+        toSelectOption(MidiControlID.OSC1_SEMI),
+        toSelectOption(MidiControlID.OSC1_CENT),
+        toSelectOption(MidiControlID.OSC_MIX),
+        toSelectOption(MidiControlID.OSC2_SEMI),
+        toSelectOption(MidiControlID.OSC2_CENT),
+        toSelectOption(MidiControlID.CUTOFF),
+        toSelectOption(MidiControlID.RESONANCE),
+        toSelectOption(MidiControlID.ATTACK),
+        toSelectOption(MidiControlID.DECAY),
+        toSelectOption(MidiControlID.SUSTAIN),
+        toSelectOption(MidiControlID.RELEASE),
+        toSelectOption(MidiControlID.LFO1_FREQ),
+        toSelectOption(MidiControlID.LFO1_MOD),
+        toSelectOption(MidiControlID.LFO2_FREQ),
+        toSelectOption(MidiControlID.LFO2_MOD),
+        toSelectOption(MidiControlID.CUT_MOD),
+        toSelectOption(MidiControlID.CUT_ATTACK),
+        toSelectOption(MidiControlID.CUT_DECAY),
     ]);
+
+    function times(op, length) {
+        return Array.from({ length }).map((_, i) => op(i));
+    }
+
+    function strPad(n) {
+        return `CHANNEL:${n < 10 ? `0${n}` : `${n}`}`;
+    }
+    function channel(value, name = strPad(value + 1)) {
+        return { value, name };
+    }
+    const length = 16; // max number of Midi channels
+    const MidiChannels = times(channel, length);
+    const MidiOmniChannel = -1;
+    MidiChannels.unshift(channel(MidiOmniChannel, "CHANNEL:ALL"));
 
     const MidiChannelOptions = new SelectOptions(MidiChannels);
 
@@ -5591,7 +5268,7 @@
         <div class="button-wrapper">
           <button
             class="${this.computeButtonClasses(MenuMode.PRESET)}"
-            @click=${this.switchModeHandler(MenuMode.MIDI_CHANNEL)}
+            @click=${this.createSwitchModeHandler(MenuMode.MIDI_CHANNEL)}
           >
             PRESET
           </button>
@@ -5599,7 +5276,7 @@
         <div class="button-wrapper">
           <button
             class="${this.computeButtonClasses(MenuMode.MIDI_CHANNEL)}"
-            @click=${this.switchModeHandler(MenuMode.MIDI_CHANNEL)}
+            @click=${this.createSwitchModeHandler(MenuMode.MIDI_CHANNEL)}
           >
             CHANNEL
           </button>
@@ -5607,7 +5284,7 @@
         <div class="button-wrapper">
           <button
             class="${this.computeButtonClasses(MenuMode.MIDI_LEARN)}"
-            @click=${this.switchModeHandler(MenuMode.MIDI_LEARN)}
+            @click=${this.createSwitchModeHandler(MenuMode.MIDI_LEARN)}
           >
             LEARN
           </button>
@@ -5629,27 +5306,39 @@
                 active: this.mode === mode,
             });
         }
-        switchModeHandler(mode) {
+        createSwitchModeHandler(mode) {
             switch (mode) {
                 case MenuMode.MIDI_CHANNEL:
                     return () => {
                         this.mode = MenuMode.MIDI_CHANNEL;
+                        this.dispatchChange();
                         this.requestUpdate();
                     };
                 case MenuMode.MIDI_LEARN:
                     return () => {
                         this.mode = MenuMode.MIDI_LEARN;
+                        this.dispatchChange();
                         this.requestUpdate();
                     };
             }
         }
         nextOption() {
             this.options.next();
+            this.dispatchChange();
             this.requestUpdate();
         }
         previousOption() {
             this.options.previous();
+            this.dispatchChange();
             this.requestUpdate();
+        }
+        dispatchChange() {
+            this.dispatchEvent(new CustomEvent("change", {
+                detail: {
+                    type: this.mode,
+                    option: this.options.getCurrent(),
+                },
+            }));
         }
         get options() {
             switch (this.mode) {
@@ -5844,270 +5533,589 @@
         }
     }
 
+    class SelectControl {
+        constructor(value) {
+            this.value = value;
+            this.clone = this.clone.bind(this);
+        }
+        clone() {
+            return Object.assign({}, this);
+        }
+    }
+    class MidiControl {
+        constructor(id, value) {
+            this.controller = -1;
+            this.id = id;
+            this.value = value;
+            this.clone = this.clone.bind(this);
+        }
+        clone() {
+            return Object.assign({}, this);
+        }
+    }
+
+    function findMidiControlEntries(state) {
+        const midiControls = [];
+        for (const value of Object.values(state)) {
+            if (value instanceof MidiControl) {
+                midiControls.push([value.id, value]);
+            }
+            else if (value instanceof Object) {
+                midiControls.push(...findMidiControlEntries(value));
+            }
+        }
+        return midiControls;
+    }
+    function computeMidiControlMap(state) {
+        const midiControlEntries = findMidiControlEntries(state);
+        return new Map(midiControlEntries);
+    }
+    function mapState(state) {
+        return {
+            osc1: {
+                mode: new SelectControl(state.osc1.mode.value),
+                semiShift: new MidiControl(MidiControlID.OSC1_SEMI, state.osc1.semiShift.value),
+                centShift: new MidiControl(MidiControlID.OSC1_CENT, state.osc1.centShift.value),
+            },
+            osc2: {
+                mode: new SelectControl(state.osc2.mode.value),
+                semiShift: new MidiControl(MidiControlID.OSC2_SEMI, state.osc2.semiShift.value),
+                centShift: new MidiControl(MidiControlID.OSC2_CENT, state.osc2.centShift.value),
+            },
+            osc2Amplitude: new MidiControl(MidiControlID.OSC_MIX, state.osc2Amplitude.value),
+            envelope: {
+                attack: new MidiControl(MidiControlID.ATTACK, state.envelope.attack.value),
+                decay: new MidiControl(MidiControlID.DECAY, state.envelope.decay.value),
+                sustain: new MidiControl(MidiControlID.SUSTAIN, state.envelope.sustain.value),
+                release: new MidiControl(MidiControlID.RELEASE, state.envelope.release.value),
+            },
+            filter: {
+                mode: new SelectControl(state.filter.mode.value),
+                cutoff: new MidiControl(MidiControlID.CUTOFF, state.filter.cutoff.value),
+                resonance: new MidiControl(MidiControlID.RESONANCE, state.filter.resonance.value),
+            },
+            cutoffMod: {
+                attack: new MidiControl(MidiControlID.CUT_ATTACK, state.cutoffMod.attack.value),
+                decay: new MidiControl(MidiControlID.CUT_DECAY, state.cutoffMod.decay.value),
+                amount: new MidiControl(MidiControlID.CUT_MOD, state.cutoffMod.amount.value),
+            },
+            lfo1: {
+                mode: new SelectControl(state.lfo1.mode.value),
+                destination: new SelectControl(state.lfo1.destination.value),
+                frequency: new MidiControl(MidiControlID.LFO1_FREQ, state.lfo1.frequency.value),
+                modAmount: new MidiControl(MidiControlID.LFO1_MOD, state.lfo1.modAmount.value),
+            },
+            lfo2: {
+                mode: new SelectControl(state.lfo2.mode.value),
+                destination: new SelectControl(state.lfo2.destination.value),
+                frequency: new MidiControl(MidiControlID.LFO2_FREQ, state.lfo1.frequency.value),
+                modAmount: new MidiControl(MidiControlID.LFO2_MOD, state.lfo1.modAmount.value),
+            },
+        };
+    }
+    function createVoiceState(state) {
+        const newState = mapState(state);
+        const midiControlMap = computeMidiControlMap(newState);
+        return Object.assign(newState, {
+            findMidiControlById(id) {
+                return midiControlMap.get(id);
+            },
+        });
+    }
+
+    class Dispatcher extends EventTarget {
+        constructor() {
+            super(...arguments);
+            this.observers = new Map();
+        }
+        dispatch(actionId, detail) {
+            this.dispatchEvent(new CustomEvent(actionId, { detail }));
+            return this;
+        }
+        subscribe(actionId, callback) {
+            const observer = (event) => {
+                callback(event.detail);
+            };
+            this.observers.set(callback, observer);
+            this.addEventListener(actionId, observer);
+            return this;
+        }
+        unsubscribe(actionId, callback) {
+            this.removeEventListener(actionId, this.observers.get(callback));
+            this.observers.delete(callback);
+            return this;
+        }
+    }
+    const GlobalDispatcher = new Dispatcher();
+
+    var MidiMessageEvent;
+    (function (MidiMessageEvent) {
+        MidiMessageEvent["NOTE_ON"] = "NOTE_ON";
+        MidiMessageEvent["NOTE_OFF"] = "NOTE_OFF";
+        MidiMessageEvent["NOTE_CHANGE"] = "NOTE_CHANGE";
+        MidiMessageEvent["CONTROL_CHANGE"] = "CONTROL_CHANGE";
+    })(MidiMessageEvent || (MidiMessageEvent = {}));
+
+    var VoiceEvent;
+    (function (VoiceEvent) {
+        VoiceEvent["OSC1"] = "OSC1";
+        VoiceEvent["OSC_MIX"] = "OSC_MIX";
+        VoiceEvent["OSC2"] = "OSC2";
+        VoiceEvent["FILTER"] = "FILTER";
+        VoiceEvent["ENVELOPE"] = "ENVELOPE";
+        VoiceEvent["LFO1"] = "LFO1";
+        VoiceEvent["LFO2"] = "LFO2";
+        VoiceEvent["CUTOFF_MOD"] = "CUTOFF_MOD";
+    })(VoiceEvent || (VoiceEvent = {}));
+
     function* createVoiceGenerator(audioContext) {
         for (;;) {
             yield new WasmVoiceNode(audioContext);
         }
     }
-    class VoiceManager {
+    class VoiceManager extends Dispatcher {
         constructor(audioContext) {
-            this.state = {
+            super();
+            this.state = createVoiceState({
                 osc1: {
-                    mode: OscillatorMode.SAWTOOTH,
-                    semiShift: 24,
-                    centShift: 0,
-                },
-                osc1Envelope: {
-                    attack: 0,
-                    decay: 127 / 2,
-                    sustain: 127,
-                    release: 127 / 4,
+                    mode: { value: OscillatorMode.SAWTOOTH },
+                    semiShift: { value: 127 / 2 },
+                    centShift: { value: 127 / 2 },
                 },
                 osc2: {
-                    mode: OscillatorMode.SAWTOOTH,
-                    semiShift: 0,
-                    centShift: 0,
+                    mode: { value: OscillatorMode.SAWTOOTH },
+                    semiShift: { value: 127 / 2 },
+                    centShift: { value: 127 / 2 },
                 },
-                osc2Envelope: {
-                    attack: 0,
-                    decay: 127 / 2,
-                    sustain: 127,
-                    release: 127 / 4,
+                osc2Amplitude: { value: 127 / 2 },
+                envelope: {
+                    attack: { value: 0 },
+                    decay: { value: 127 / 2 },
+                    sustain: { value: 127 },
+                    release: { value: 127 / 4 },
                 },
-                osc2Amplitude: 127 / 2,
                 filter: {
-                    mode: FilterMode.LOWPASS,
-                    cutoff: 127,
-                    resonance: 0,
+                    mode: { value: FilterMode.LOWPASS },
+                    cutoff: { value: 127 },
+                    resonance: { value: 0 },
                 },
-                cutoffEnvelope: {
-                    attack: 0,
-                    decay: 127 / 2,
-                    amount: 0,
+                cutoffMod: {
+                    attack: { value: 0 },
+                    decay: { value: 127 / 2 },
+                    amount: { value: 0 },
                 },
                 lfo1: {
-                    mode: OscillatorMode.SINE,
-                    frequency: 127 / 2,
-                    modAmount: 0,
-                    destination: LfoDestination.OSCILLATOR_MIX,
+                    mode: { value: OscillatorMode.SINE },
+                    frequency: { value: 127 / 2 },
+                    modAmount: { value: 0 },
+                    destination: { value: LfoDestination.OSCILLATOR_MIX },
                 },
                 lfo2: {
-                    mode: OscillatorMode.SINE,
-                    frequency: 127 / 2,
-                    modAmount: 0,
-                    destination: LfoDestination.OSCILLATOR_MIX,
+                    mode: { value: OscillatorMode.SINE },
+                    frequency: { value: 127 / 2 },
+                    modAmount: { value: 0 },
+                    destination: { value: LfoDestination.OSCILLATOR_MIX },
                 },
-            };
+            });
             this.voiceGenerator = createVoiceGenerator(audioContext);
-            this.channels = Array.from({ length: 16 }).map(() => new Map());
+            this.voices = new Map();
             this.output = new GainNode(audioContext);
+            this.onMidiNoteOn = this.onMidiNoteOn.bind(this);
+            this.onMidiNoteOff = this.onMidiNoteOff.bind(this);
+            this.onMidiCC = this.onMidiCC.bind(this);
         }
-        next({ frequency, midiValue, channel }) {
-            const voiceMap = this.channels[channel - 1];
-            if (voiceMap.has(midiValue)) {
-                return voiceMap.get(midiValue);
+        next({ frequency, midiValue }) {
+            if (this.voices.has(midiValue)) {
+                return this.voices.get(midiValue);
             }
             const voice = this.voiceGenerator.next().value;
             voice.frequency.value = frequency;
-            voice.osc1 = this.state.osc1.mode;
-            voice.osc1SemiShift.value = this.state.osc1.semiShift;
-            voice.osc1CentShift.value = this.state.osc1.centShift;
-            voice.osc2 = this.state.osc2.mode;
-            voice.osc2SemiShift.value = this.state.osc2.semiShift;
-            voice.osc2CentShift.value = this.state.osc2.centShift;
-            voice.osc2Amplitude.value = this.state.osc2Amplitude;
-            voice.amplitudeAttack.value = this.state.osc1Envelope.attack;
-            voice.amplitudeDecay.value = this.state.osc1Envelope.decay;
-            voice.amplitudeSustain.value = this.state.osc1Envelope.sustain;
-            voice.amplitudeRelease.value = this.state.osc1Envelope.release;
-            voice.filterMode = this.state.filter.mode;
-            voice.cutoff.value = this.state.filter.cutoff;
-            voice.resonance.value = this.state.filter.resonance;
-            voice.cutoffAttack.value = this.state.cutoffEnvelope.attack;
-            voice.cutoffDecay.value = this.state.cutoffEnvelope.decay;
-            voice.cutoffEnvelopeAmount.value = this.state.cutoffEnvelope.amount;
-            voice.lfo1Frequency.value = this.state.lfo1.frequency;
-            voice.lfo1ModAmount.value = this.state.lfo1.modAmount;
-            voice.lfo1Mode = this.state.lfo1.mode;
-            voice.lfo1Destination = this.state.lfo1.destination;
-            voice.lfo2Frequency.value = this.state.lfo2.frequency;
-            voice.lfo2ModAmount.value = this.state.lfo2.modAmount;
-            voice.lfo2Mode = this.state.lfo2.mode;
-            voice.lfo2Destination = this.state.lfo2.destination;
-            voiceMap.set(midiValue, voice);
+            voice.osc1 = this.state.osc1.mode.value;
+            voice.osc1SemiShift.value = this.state.osc1.semiShift.value;
+            voice.osc1CentShift.value = this.state.osc1.centShift.value;
+            voice.osc2 = this.state.osc2.mode.value;
+            voice.osc2SemiShift.value = this.state.osc2.semiShift.value;
+            voice.osc2CentShift.value = this.state.osc2.centShift.value;
+            voice.osc2Amplitude.value = this.state.osc2Amplitude.value;
+            voice.amplitudeAttack.value = this.state.envelope.attack.value;
+            voice.amplitudeDecay.value = this.state.envelope.decay.value;
+            voice.amplitudeSustain.value = this.state.envelope.decay.value;
+            voice.amplitudeRelease.value = this.state.envelope.release.value;
+            voice.filterMode = this.state.filter.mode.value;
+            voice.cutoff.value = this.state.filter.cutoff.value;
+            voice.resonance.value = this.state.filter.resonance.value;
+            voice.cutoffAttack.value = this.state.cutoffMod.attack.value;
+            voice.cutoffDecay.value = this.state.cutoffMod.decay.value;
+            voice.cutoffEnvelopeAmount.value = this.state.cutoffMod.amount.value;
+            voice.lfo1Frequency.value = this.state.lfo1.frequency.value;
+            voice.lfo1ModAmount.value = this.state.lfo1.modAmount.value;
+            voice.lfo1Mode = this.state.lfo1.mode.value;
+            voice.lfo1Destination = this.state.lfo1.destination.value;
+            voice.lfo2Frequency.value = this.state.lfo2.frequency.value;
+            voice.lfo2ModAmount.value = this.state.lfo2.modAmount.value;
+            voice.lfo2Mode = this.state.lfo2.mode.value;
+            voice.lfo2Destination = this.state.lfo2.destination.value;
+            this.voices.set(midiValue, voice);
             voice.connect(this.output);
             voice.start();
             return voice;
         }
-        stop({ midiValue, channel }) {
-            const voiceMap = this.channels[channel - 1];
-            if (voiceMap.has(midiValue)) {
-                voiceMap.get(midiValue).stop();
-                voiceMap.delete(midiValue);
+        setMidiController(midiController) {
+            midiController
+                .subscribe(MidiMessageEvent.NOTE_ON, this.onMidiNoteOn)
+                .subscribe(MidiMessageEvent.NOTE_OFF, this.onMidiNoteOff)
+                .subscribe(MidiMessageEvent.CONTROL_CHANGE, this.onMidiCC);
+            this.midiController = midiController;
+            return this;
+        }
+        onMidiNoteOn(message) {
+            const note = midiToNote(message.data.value);
+            this.next(note);
+            this.dispatch(MidiMessageEvent.NOTE_ON, note);
+        }
+        onMidiNoteOff(message) {
+            this.stop({ midiValue: message.data.value });
+            this.dispatch(MidiMessageEvent.NOTE_OFF, message);
+        }
+        onMidiCC(message) {
+            const midiControl = this.state.findMidiControlById(message.controlID);
+            if (!midiControl) {
+                return;
+            }
+            midiControl.value = message.data.value;
+            if (message.isMidiLearning) {
+                this.midiController.mapControl(message.data.control, midiControl.id);
+            }
+            this.dispatchCC(midiControl);
+        }
+        dispatchCC(control) {
+            switch (control.id) {
+                case MidiControlID.OSC1_SEMI:
+                    return this.dispatch(VoiceEvent.OSC1, Object.assign(Object.assign({}, this.state.osc1), { semiShift: control.clone() }));
+                case MidiControlID.OSC1_CENT:
+                    return this.dispatch(VoiceEvent.OSC1, Object.assign(Object.assign({}, this.state.osc1), { centShift: control.clone() }));
+                case MidiControlID.OSC2_SEMI:
+                    return this.dispatch(VoiceEvent.OSC2, Object.assign(Object.assign({}, this.state.osc2), { centShift: control.clone() }));
+                case MidiControlID.OSC2_CENT:
+                    return this.dispatch(VoiceEvent.OSC2, Object.assign(Object.assign({}, this.state.osc1), { centShift: control.clone() }));
+                case MidiControlID.OSC_MIX:
+                    return this.dispatch(VoiceEvent.OSC_MIX, control.clone());
+                case MidiControlID.CUTOFF:
+                    return this.dispatch(VoiceEvent.FILTER, Object.assign(Object.assign({}, this.state.filter), { cutoff: control.clone() }));
+                case MidiControlID.RESONANCE:
+                    return this.dispatch(VoiceEvent.FILTER, Object.assign(Object.assign({}, this.state.filter), { resonance: control.clone() }));
+                case MidiControlID.ATTACK:
+                    return this.dispatch(VoiceEvent.ENVELOPE, Object.assign(Object.assign({}, this.state.envelope), { attack: control.clone() }));
+                case MidiControlID.DECAY:
+                    return this.dispatch(VoiceEvent.ENVELOPE, Object.assign(Object.assign({}, this.state.envelope), { decay: control.clone() }));
+                case MidiControlID.SUSTAIN:
+                    return this.dispatch(VoiceEvent.ENVELOPE, Object.assign(Object.assign({}, this.state.envelope), { sustain: control.clone() }));
+                case MidiControlID.RELEASE:
+                    return this.dispatch(VoiceEvent.ENVELOPE, Object.assign(Object.assign({}, this.state.envelope), { release: control.clone() }));
+                case MidiControlID.LFO1_FREQ:
+                    return this.dispatch(VoiceEvent.LFO1, Object.assign(Object.assign({}, this.state.lfo1), { frequency: control.clone() }));
+                case MidiControlID.LFO1_MOD:
+                    return this.dispatch(VoiceEvent.LFO1, Object.assign(Object.assign({}, this.state.lfo1), { modAmount: control.clone() }));
+                case MidiControlID.LFO2_FREQ:
+                    return this.dispatch(VoiceEvent.LFO1, Object.assign(Object.assign({}, this.state.lfo1), { frequency: control.clone() }));
+                case MidiControlID.LFO2_MOD:
+                    return this.dispatch(VoiceEvent.LFO2, Object.assign(Object.assign({}, this.state.lfo2), { modAmount: control.clone() }));
+                case MidiControlID.CUT_ATTACK:
+                    return this.dispatch(VoiceEvent.CUTOFF_MOD, Object.assign(Object.assign({}, this.state.cutoffMod), { attack: control.clone() }));
+                case MidiControlID.CUT_DECAY:
+                    return this.dispatch(VoiceEvent.CUTOFF_MOD, Object.assign(Object.assign({}, this.state.cutoffMod), { decay: control.clone() }));
+                case MidiControlID.CUT_MOD:
+                    return this.dispatch(VoiceEvent.CUTOFF_MOD, Object.assign(Object.assign({}, this.state.cutoffMod), { amount: control.clone() }));
+            }
+        }
+        stop({ midiValue }) {
+            if (this.voices.has(midiValue)) {
+                this.voices.get(midiValue).stop();
+                this.voices.delete(midiValue);
             }
         }
         connect(input) {
             this.output.connect(input);
         }
-        withState(state) {
-            this.state = state;
-            return this;
+        getState() {
+            return Object.assign({}, this.state);
         }
         setOsc1Mode(newMode) {
-            this.state.osc1.mode = newMode;
+            this.state.osc1.mode.value = newMode;
             this.dispatchUpdate((voice) => (voice.osc1 = newMode));
+            return this;
         }
         setOsc1SemiShift(newSemiShift) {
-            this.state.osc1.semiShift = newSemiShift;
+            this.state.osc1.semiShift.value = newSemiShift;
             this.dispatchUpdate((voice) => (voice.osc1SemiShift.value = newSemiShift));
+            return this;
         }
         setOsc1CentShift(newCentShift) {
-            this.state.osc1.centShift = newCentShift;
+            this.state.osc1.centShift.value = newCentShift;
             this.dispatchUpdate((voice) => (voice.osc1CentShift.value = newCentShift));
+            return this;
         }
         get osc1() {
             return this.state.osc1;
         }
         setOsc2Mode(newMode) {
-            this.state.osc2.mode = newMode;
+            this.state.osc2.mode.value = newMode;
             this.dispatchUpdate((voice) => (voice.osc2 = newMode));
+            return this;
         }
         setOsc2SemiShift(newSemiShift) {
-            this.state.osc2.semiShift = newSemiShift;
+            this.state.osc2.semiShift.value = newSemiShift;
             this.dispatchUpdate((voice) => (voice.osc2SemiShift.value = newSemiShift));
+            return this;
         }
         setOsc2CentShift(newCentShift) {
-            this.state.osc2.centShift = newCentShift;
+            this.state.osc2.centShift.value = newCentShift;
             this.dispatchUpdate((voice) => (voice.osc2CentShift.value = newCentShift));
+            return this;
         }
         get osc2() {
             return this.state.osc2;
         }
         setOsc1EnvelopeAttack(newAttackTime) {
-            this.state.osc1Envelope.attack = newAttackTime;
+            this.state.envelope.attack.value = newAttackTime;
+            return this;
         }
         setOsc1EnvelopeDecay(newDecayTime) {
-            this.state.osc1Envelope.decay = newDecayTime;
+            this.state.envelope.decay.value = newDecayTime;
+            return this;
         }
         setOsc1EnvelopeSustain(newSustainLevel) {
-            this.state.osc1Envelope.sustain = newSustainLevel;
+            this.state.envelope.sustain.value = newSustainLevel;
+            return this;
         }
         setOsc1EnvelopeRelease(newReleaseTime) {
-            this.state.osc1Envelope.release = newReleaseTime;
+            this.state.envelope.release.value = newReleaseTime;
+            return this;
         }
-        get osc1Envelope() {
-            return this.state.osc1Envelope;
+        get envelope() {
+            return this.state.envelope;
         }
         setOsc2Amplitude(newOsc2Amplitude) {
-            this.state.osc2Amplitude = newOsc2Amplitude;
+            this.state.osc2Amplitude.value = newOsc2Amplitude;
             this.dispatchUpdate((voice) => (voice.osc2Amplitude.value = newOsc2Amplitude));
+            return this;
         }
         get osc2Amplitude() {
             return this.state.osc2Amplitude;
         }
         setFilterMode(newMode) {
-            this.state.filter.mode = newMode;
+            this.state.filter.mode.value = newMode;
             this.dispatchUpdate((voice) => (voice.filterMode = newMode));
+            return this;
         }
         setFilterCutoff(newCutoff) {
-            this.state.filter.cutoff = newCutoff;
+            this.state.filter.cutoff.value = newCutoff;
             this.dispatchUpdate((voice) => (voice.cutoff.value = newCutoff));
+            return this;
         }
         setFilterResonance(newResonance) {
-            this.state.filter.resonance = newResonance;
+            this.state.filter.resonance.value = newResonance;
             this.dispatchUpdate((voice) => (voice.resonance.value = newResonance));
+            return this;
         }
         get filter() {
             return this.state.filter;
         }
         setCutoffEnvelopeAmount(newAmount) {
-            this.state.cutoffEnvelope.amount = newAmount;
+            this.state.cutoffMod.amount.value = newAmount;
+            return this;
         }
         setCutoffEnvelopeAttack(newAttackTime) {
-            this.state.cutoffEnvelope.attack = newAttackTime;
+            this.state.cutoffMod.attack.value = newAttackTime;
+            return this;
         }
         setCutoffEnvelopeDecay(newDecayTime) {
-            this.state.cutoffEnvelope.decay = newDecayTime;
+            this.state.cutoffMod.decay.value = newDecayTime;
+            return this;
         }
         setLfo1Mode(newMode) {
-            this.state.lfo1.mode = newMode;
+            this.state.lfo1.mode.value = newMode;
             this.dispatchUpdate((voice) => (voice.lfo1Mode = newMode));
+            return this;
+        }
+        get lfo1() {
+            return this.state.lfo1;
         }
         setLfo1Destination(newDestination) {
-            this.state.lfo1.destination = newDestination;
+            this.state.lfo1.destination.value = newDestination;
             this.dispatchUpdate((voice) => (voice.lfo1Destination = newDestination));
+            return this;
         }
         setLfo1Frequency(newFrequency) {
-            this.state.lfo1.frequency = newFrequency;
+            this.state.lfo1.frequency.value = newFrequency;
             this.dispatchUpdate((voice) => (voice.lfo1Frequency.value = newFrequency));
+            return this;
         }
         setLfo1ModAmount(newAmount) {
-            this.state.lfo1.modAmount = newAmount;
+            this.state.lfo1.modAmount.value = newAmount;
             this.dispatchUpdate((voice) => (voice.lfo1ModAmount.value = newAmount));
+            return this;
+        }
+        get lfo2() {
+            return this.state.lfo2;
         }
         setLfo2Mode(newMode) {
-            this.state.lfo2.mode = newMode;
+            this.state.lfo2.mode.value = newMode;
             this.dispatchUpdate((voice) => (voice.lfo2Mode = newMode));
+            return this;
         }
         setLfo2Destination(newDestination) {
-            this.state.lfo2.destination = newDestination;
+            this.state.lfo2.destination.value = newDestination;
             this.dispatchUpdate((voice) => (voice.lfo2Destination = newDestination));
+            return this;
         }
         setLfo2Frequency(newFrequency) {
-            this.state.lfo2.frequency = newFrequency;
+            this.state.lfo2.frequency.value = newFrequency;
             this.dispatchUpdate((voice) => (voice.lfo2Frequency.value = newFrequency));
+            return this;
         }
         setLfo2ModAmount(newAmount) {
-            this.state.lfo2.modAmount = newAmount;
+            this.state.lfo2.modAmount.value = newAmount;
             this.dispatchUpdate((voice) => (voice.lfo2ModAmount.value = newAmount));
+            return this;
         }
-        get cutoffEnvelope() {
-            return this.state.cutoffEnvelope;
+        get cutoffMod() {
+            return this.state.cutoffMod;
         }
         dispatchUpdate(doUpdate) {
-            for (const channel of this.channels) {
-                for (const voice of channel.values()) {
-                    doUpdate(voice);
-                }
+            for (const voice of this.voices.values()) {
+                doUpdate(voice);
             }
         }
+    }
+
+    async function createMidiController(channel = MidiOmniChannel) {
+        const midiNavigator = navigator;
+        const midiDispatcher = new Dispatcher();
+        const controlMap = new Map();
+        let midiAccess;
+        let midiChannel = channel;
+        let midiLearnerID = MidiControlID.NONE;
+        if (!midiNavigator.requestMIDIAccess) {
+            return Promise.reject("MIDI is not supported, returning a noop dispatcher");
+        }
+        try {
+            midiAccess = await midiNavigator.requestMIDIAccess();
+        }
+        catch (error) {
+            return Promise.reject("Error requesting MIDI access, returning a noop dispatcher");
+        }
+        for (const input of midiAccess.inputs.values()) {
+            input.onmidimessage = (message) => {
+                const midiMessage = newMidiMessage(new DataView(message.data.buffer));
+                dispatchMessageIfNeeded(midiMessage);
+            };
+        }
+        function dispatchMessageIfNeeded(message) {
+            const channel = message.data.channel;
+            if (channel !== midiChannel && midiChannel !== MidiOmniChannel) {
+                return;
+            }
+            if (message.status === Status.NOTE_ON) {
+                midiDispatcher.dispatch(MidiMessageEvent.NOTE_ON, message);
+            }
+            if (message.status === Status.NOTE_OFF) {
+                midiDispatcher.dispatch(MidiMessageEvent.NOTE_OFF, message);
+            }
+            if (isControlChange(message)) {
+                dispatchControlChangeMessage(message);
+            }
+        }
+        function dispatchControlChangeMessage(message) {
+            message.isMidiLearning = midiLearnerID !== MidiControlID.NONE;
+            message.controlID = controlMap.get(message.data.control);
+            if (message.isMidiLearning) {
+                message.controlID = midiLearnerID;
+            }
+            midiDispatcher.dispatch(MidiMessageEvent.CONTROL_CHANGE, message);
+        }
+        return Object.assign(midiDispatcher, {
+            setChannel(channel) {
+                midiChannel = channel;
+            },
+            setMidiLearnerID(id) {
+                midiLearnerID = id;
+            },
+            mapControl(midiControl, id) {
+                controlMap.set(midiControl, id);
+                midiLearnerID = MidiControlID.NONE;
+            },
+        });
     }
 
     var _a$2;
     let Root = class Root extends LitElement {
         constructor() {
-            super(...arguments);
-            this.shouldMidiLearn = false;
-        }
-        async connectedCallback() {
-            super.connectedCallback();
+            super();
             this.audioContext = new AudioContext();
             this.analyzer = this.audioContext.createAnalyser();
             this.voiceManager = new VoiceManager(this.audioContext);
-            this.voiceManager.connect(this.analyzer);
+            this.state = this.voiceManager.getState();
+            this.registerVoiceHandlers = this.registerVoiceHandlers.bind(this);
+        }
+        async connectedCallback() {
+            super.connectedCallback();
+            this.midiController = await createMidiController(MidiOmniChannel);
+            this.voiceManager
+                .setMidiController(this.midiController)
+                .connect(this.analyzer);
             this.analyzer.connect(this.audioContext.destination);
             await this.audioContext.audioWorklet.addModule("voice-processor.js");
-            this.registerMidiLearners();
+            this.registerVoiceHandlers();
         }
         async onKeyOn(event) {
             if (this.audioContext.state === "suspended") {
                 await this.audioContext.resume();
             }
-            const { frequency, midiValue, channel } = event.detail;
-            this.voiceManager.next({ frequency, midiValue, channel });
+            const { frequency, midiValue } = event.detail;
+            this.voiceManager.next({ frequency, midiValue });
         }
         onKeyOff(event) {
-            const { midiValue, channel } = event.detail;
-            this.voiceManager.stop({ midiValue, channel });
+            const { midiValue } = event.detail;
+            this.voiceManager.stop({ midiValue });
         }
-        notifyMidiLearners(event) {
-            GlobalDispatcher.dispatch(DispatcherEvent.SHOULD_MIDI_LEARN, event.detail);
-        }
-        registerMidiLearners() {
-            GlobalDispatcher.subscribe(DispatcherEvent.SHOULD_MIDI_LEARN, (event) => {
-                this.shouldMidiLearn = event.detail.value;
+        registerVoiceHandlers() {
+            this.voiceManager
+                .subscribe(VoiceEvent.OSC1, (newState) => {
+                this.state.osc1 = newState;
+                this.requestUpdate();
+            })
+                .subscribe(VoiceEvent.OSC_MIX, (newState) => {
+                this.state.osc2Amplitude = newState;
+                this.requestUpdate();
+            })
+                .subscribe(VoiceEvent.OSC2, (newState) => {
+                this.state.osc2 = newState;
+                this.requestUpdate();
+            })
+                .subscribe(VoiceEvent.FILTER, (newState) => {
+                this.state.filter = newState;
+                this.requestUpdate();
+            })
+                .subscribe(VoiceEvent.ENVELOPE, (newState) => {
+                this.state.envelope = newState;
+                this.requestUpdate();
+            })
+                .subscribe(VoiceEvent.LFO1, (newState) => {
+                this.state.lfo1 = newState;
+                this.requestUpdate();
+            })
+                .subscribe(VoiceEvent.LFO2, (newState) => {
+                this.state.lfo2 = newState;
+                this.requestUpdate();
+            })
+                .subscribe(VoiceEvent.CUTOFF_MOD, (newState) => {
+                this.state.cutoffMod = newState;
+                this.requestUpdate();
             });
         }
+        notifyMidiLearners(event) { }
+        registerMidiLearners() { }
         onOsc1Change(event) {
             switch (event.detail.type) {
                 case OscillatorEvent.WAVE_FORM:
@@ -6209,71 +6217,69 @@
                     this.voiceManager.setLfo2Destination(event.detail.value);
             }
         }
+        onMenuChange(event) {
+            const { type, option } = event.detail;
+            switch (type) {
+                case MenuMode.MIDI_LEARN:
+                    this.midiController.setMidiLearnerID(option.value);
+            }
+        }
         render() {
             return html `
       <div class="content">
-        <div class="visualizer">
-          <visualizer-element
-            .analyser=${this.analyzer}
-            width="1024"
-            height="300"
-          ></visualizer-element>
-        </div>
         <div class="synth">
           <div class="menu">
-            <menu-element .analyser=${this.analyzer}></menu-element>
+            <menu-element
+              .analyser=${this.analyzer}
+              @change=${this.onMenuChange}
+            ></menu-element>
           </div>
           <div class="oscillators">
             <oscillator-element
               label="Osc 1"
-              .state=${this.voiceManager.osc1}
+              .state=${this.state.osc1}
               @change=${this.onOsc1Change}
-              .shouldMidiLearn="${this.shouldMidiLearn}"
             ></oscillator-element>
             <div class="oscillator-mix">
               <panel-wrapper-element class="oscillator-mix-wrapper">
                 <div class="oscillator-mix-control">
                   <knob-element
                     label="osc mix"
-                    .value=${this.voiceManager.osc2Amplitude}
+                    .value=${this.state.osc2Amplitude.value}
                     @change=${this.onOscMixChange}
-                    .shouldMidiLearn="${this.shouldMidiLearn}"
                   ></knob-element>
                 </div>
               </panel-wrapper-element>
             </div>
             <oscillator-element
               label="Osc 2"
-              .state=${this.voiceManager.osc2}
+              .state=${this.state.osc2}
               @change=${this.onOsc2Change}
-              .shouldMidiLearn="${this.shouldMidiLearn}"
             ></oscillator-element>
             <filter-element
-              .state=${this.voiceManager.filter}
+              .state=${this.state.filter}
               @change=${this.onFilterChange}
-              .shouldMidiLearn="${this.shouldMidiLearn}"
             ></filter-element>
           </div>
           <div class="envelopes">
             <envelope-element
               label="envelope"
-              .state=${this.voiceManager.osc1Envelope}
+              .state=${this.state.envelope}
               @change=${this.onOsc1EnvelopeChange}
             ></envelope-element>
             <lfo-element
               label="lfo 1"
+              .state=${this.state.lfo1}
               @change=${this.onLfo1Change}
-              .shouldMidiLearn="${this.shouldMidiLearn}"
             ></lfo-element>
             <lfo-element
               label="lfo 2"
+              .state=${this.state.lfo2}
               @change=${this.onLfo2Change}
-              .shouldMidiLearn="${this.shouldMidiLearn}"
             ></lfo-element>
             <filter-envelope-element
-              .state=${this.voiceManager.cutoffEnvelope}
+              .state=${this.state.cutoffMod}
               @change=${this.onFilterEnvelopeChange}
-              .shouldMidiLearn="${this.shouldMidiLearn}"
             ></filter-envelope-element>
           </div>
         </div>
@@ -6285,6 +6291,13 @@
               @keyOff=${this.onKeyOff}
             ></keys-element>
           </div>
+        </div>
+        <div class="visualizer">
+          <visualizer-element
+            .analyser=${this.analyzer}
+            width="650"
+            height="200"
+          ></visualizer-element>
         </div>
       </div>
     `;
@@ -6359,12 +6372,9 @@
         property({ type: Object }),
         __metadata("design:type", typeof (_a$2 = typeof AnalyserNode !== "undefined" && AnalyserNode) === "function" ? _a$2 : Object)
     ], Root.prototype, "analyzer", void 0);
-    __decorate([
-        property({ type: Boolean }),
-        __metadata("design:type", Object)
-    ], Root.prototype, "shouldMidiLearn", void 0);
     Root = __decorate([
-        customElement("child-element")
+        customElement("child-element"),
+        __metadata("design:paramtypes", [])
     ], Root);
 
 })));
