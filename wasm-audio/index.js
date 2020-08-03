@@ -3294,22 +3294,13 @@
         fill: var(--control-top-color, #ccc);
       }
 
-      @keyframes focus {
-        0% {
-          fill: var(--control-top-color, #ccc);
-        }
-        50% {
-          fill: var(--control-color-focused, #ccc);
-        }
-      }
-
       .knob__cursor {
         fill: var(--control-cursor-color, #ccc);
       }
 
       .label {
         font-size: 0.8em;
-        color: var(--lighter-color);
+        color: var(--control-label-color);
         display: flex;
         justify-content: center;
       }
@@ -3682,10 +3673,99 @@
         customElement("panel-wrapper-element")
     ], PanelWrapper);
 
+    class SelectOptions {
+        constructor(options) {
+            this.currentOption = 0;
+            this.options = options;
+            this.map = options.map.bind(options);
+        }
+        get size() {
+            return this.options.length;
+        }
+        set index(index) {
+            this.currentOption = index - 1;
+            this.next();
+        }
+        get index() {
+            return this.currentOption;
+        }
+        select(index) {
+            this.currentOption = index;
+            return this;
+        }
+        next() {
+            if (++this.currentOption >= this.options.length) {
+                this.currentOption = 0;
+            }
+            return this;
+        }
+        previous() {
+            if (--this.currentOption < 0) {
+                this.currentOption = this.options.length - 1;
+            }
+            return this;
+        }
+        getCurrent() {
+            return this.options[this.currentOption];
+        }
+    }
+
+    var MidiControlID;
+    (function (MidiControlID) {
+        MidiControlID[MidiControlID["NONE"] = -1] = "NONE";
+        MidiControlID[MidiControlID["OSC1_SEMI"] = 0] = "OSC1_SEMI";
+        MidiControlID[MidiControlID["OSC1_CENT"] = 1] = "OSC1_CENT";
+        MidiControlID[MidiControlID["OSC_MIX"] = 2] = "OSC_MIX";
+        MidiControlID[MidiControlID["OSC2_SEMI"] = 3] = "OSC2_SEMI";
+        MidiControlID[MidiControlID["OSC2_CENT"] = 4] = "OSC2_CENT";
+        MidiControlID[MidiControlID["CUTOFF"] = 5] = "CUTOFF";
+        MidiControlID[MidiControlID["RESONANCE"] = 6] = "RESONANCE";
+        MidiControlID[MidiControlID["ATTACK"] = 7] = "ATTACK";
+        MidiControlID[MidiControlID["DECAY"] = 8] = "DECAY";
+        MidiControlID[MidiControlID["SUSTAIN"] = 9] = "SUSTAIN";
+        MidiControlID[MidiControlID["RELEASE"] = 10] = "RELEASE";
+        MidiControlID[MidiControlID["LFO1_FREQ"] = 11] = "LFO1_FREQ";
+        MidiControlID[MidiControlID["LFO1_MOD"] = 12] = "LFO1_MOD";
+        MidiControlID[MidiControlID["LFO2_FREQ"] = 13] = "LFO2_FREQ";
+        MidiControlID[MidiControlID["LFO2_MOD"] = 14] = "LFO2_MOD";
+        MidiControlID[MidiControlID["CUT_MOD"] = 15] = "CUT_MOD";
+        MidiControlID[MidiControlID["CUT_ATTACK"] = 16] = "CUT_ATTACK";
+        MidiControlID[MidiControlID["CUT_DECAY"] = 17] = "CUT_DECAY";
+    })(MidiControlID || (MidiControlID = {}));
+    function toSelectOption(option) {
+        return {
+            name: MidiControlID[option].replace(/_/g, " "),
+            value: option,
+        };
+    }
+    const MidiLearnOptions = new SelectOptions([
+        toSelectOption(MidiControlID.OSC1_SEMI),
+        toSelectOption(MidiControlID.OSC1_CENT),
+        toSelectOption(MidiControlID.OSC_MIX),
+        toSelectOption(MidiControlID.OSC2_SEMI),
+        toSelectOption(MidiControlID.OSC2_CENT),
+        toSelectOption(MidiControlID.CUTOFF),
+        toSelectOption(MidiControlID.RESONANCE),
+        toSelectOption(MidiControlID.ATTACK),
+        toSelectOption(MidiControlID.DECAY),
+        toSelectOption(MidiControlID.SUSTAIN),
+        toSelectOption(MidiControlID.RELEASE),
+        toSelectOption(MidiControlID.LFO1_FREQ),
+        toSelectOption(MidiControlID.LFO1_MOD),
+        toSelectOption(MidiControlID.LFO2_FREQ),
+        toSelectOption(MidiControlID.LFO2_MOD),
+        toSelectOption(MidiControlID.CUT_MOD),
+        toSelectOption(MidiControlID.CUT_ATTACK),
+        toSelectOption(MidiControlID.CUT_DECAY),
+    ]);
+
     let Oscillator = class Oscillator extends LitElement {
         constructor() {
             super();
             this.label = "Osc";
+            this.currentLearnerID = MidiControlID.NONE;
+            this.semiControlID = MidiControlID.OSC1_SEMI;
+            this.centControlID = MidiControlID.OSC1_CENT;
         }
         connectedCallback() {
             super.connectedCallback();
@@ -3721,19 +3801,29 @@
           <div class="tone-controls">
             <div class="shift-control">
               <div class="semi-shift-control">
-                <knob-element
-                  .value=${this.semiShiftValue}
-                  @change=${this.onSemiShift}
-                ></knob-element>
+                <midi-control-wrapper
+                  controlID=${this.semiControlID}
+                  currentLearnerID=${this.currentLearnerID}
+                >
+                  <knob-element
+                    .value=${this.semiShiftValue}
+                    @change=${this.onSemiShift}
+                  ></knob-element>
+                </midi-control-wrapper>
               </div>
               <label>semi</label>
             </div>
             <div class="shift-control">
               <div class="cent-shift-control cent">
-                <knob-element
-                  .value=${this.centShiftValue}
-                  @change=${this.onCentShift}
-                ></knob-element>
+                <midi-control-wrapper
+                  controlID=${this.centControlID}
+                  currentLearnerID=${this.currentLearnerID}
+                >
+                  <knob-element
+                    .value=${this.centShiftValue}
+                    @change=${this.onCentShift}
+                  ></knob-element>
+                </midi-control-wrapper>
               </div>
               <label>cents</label>
             </div>
@@ -3793,7 +3883,7 @@
 
       label {
         display: block;
-        color: white;
+        color: var(--control-label-color);
         font-size: 0.8em;
       }
     `;
@@ -3807,6 +3897,18 @@
         property({ type: Object }),
         __metadata("design:type", Object)
     ], Oscillator.prototype, "state", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Oscillator.prototype, "currentLearnerID", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Oscillator.prototype, "semiControlID", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Oscillator.prototype, "centControlID", void 0);
     Oscillator = __decorate([
         customElement("oscillator-element"),
         __metadata("design:paramtypes", [])
@@ -3818,6 +3920,56 @@
         FilterEvent[FilterEvent["CUTOFF"] = 1] = "CUTOFF";
         FilterEvent[FilterEvent["RESONANCE"] = 2] = "RESONANCE";
     })(FilterEvent || (FilterEvent = {}));
+
+    var _a$1;
+    let MidiControlWrapper = class MidiControlWrapper extends LitElement {
+        constructor() {
+            super(...arguments);
+            this.currentLearnerID = MidiControlID.NONE;
+        }
+        get hasFocus() {
+            return this.currentLearnerID === this.controlID;
+        }
+        render() {
+            return html `
+      <div class="${this.computeClassMap()}">
+        <slot></slot>
+      </div>
+    `;
+        }
+        computeClassMap() {
+            return classMap({
+                wrapper: true,
+                focus: this.hasFocus,
+            });
+        }
+        static get styles() {
+            // noinspection CssUnresolvedCustomProperty
+            return css `
+      .wrapper.focus {
+        animation: control-focus 1s ease-in-out infinite;
+      }
+
+      @keyframes control-focus {
+        to {
+          --control-handle-color: var(--control-hander-color-focused);
+          --control-label-color: var(--control-hander-color-focused);
+        }
+      }
+    `;
+        }
+    };
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", typeof (_a$1 = typeof MidiControlID !== "undefined" && MidiControlID) === "function" ? _a$1 : Object)
+    ], MidiControlWrapper.prototype, "controlID", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], MidiControlWrapper.prototype, "currentLearnerID", void 0);
+    MidiControlWrapper = __decorate([
+        customElement("midi-control-wrapper")
+    ], MidiControlWrapper);
 
     var FilterMode;
     (function (FilterMode) {
@@ -3942,6 +4094,10 @@
     ], FilterSelector);
 
     let Filter = class Filter extends LitElement {
+        constructor() {
+            super(...arguments);
+            this.currentLearnerID = MidiControlID.NONE;
+        }
         onCutoffChange(event) {
             this.dispatchChange(FilterEvent.CUTOFF, event.detail.value);
         }
@@ -3967,21 +4123,31 @@
           <div class="frequency-controls">
             <div class="frequency-control">
               <div class="cutoff-control">
-                <knob-element
-                  .value=${this.state.cutoff.value}
-                  @change=${this.onCutoffChange}
-                ></knob-element>
+                <midi-control-wrapper
+                  controlID=${MidiControlID.CUTOFF}
+                  currentLearnerID=${this.currentLearnerID}
+                >
+                  <knob-element
+                    label="cutoff"
+                    .value=${this.state.cutoff.value}
+                    @change=${this.onCutoffChange}
+                  ></knob-element>
+                </midi-control-wrapper>
               </div>
-              <label>cutoff</label>
             </div>
             <div class="frequency-control">
               <div class="resonance-control">
-                <knob-element
-                  .value=${this.state.resonance.value}
-                  @change=${this.onResonanceChange}
-                ></knob-element>
+                <midi-control-wrapper
+                  controlID=${MidiControlID.RESONANCE}
+                  currentLearnerID=${this.currentLearnerID}
+                >
+                  <knob-element
+                    label="reson."
+                    .value=${this.state.resonance.value}
+                    @change=${this.onResonanceChange}
+                  ></knob-element>
+                </midi-control-wrapper>
               </div>
-              <label>reson.</label>
             </div>
           </div>
         </div>
@@ -4042,6 +4208,10 @@
         property({ type: Object }),
         __metadata("design:type", Object)
     ], Filter.prototype, "state", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Filter.prototype, "currentLearnerID", void 0);
     Filter = __decorate([
         customElement("filter-element")
     ], Filter);
@@ -4229,9 +4399,9 @@
 
       label {
         display: block;
-        color: white;
+        color: var(--control-label-color);
         font-size: 0.8em;
-        margin-top: 0.2em;
+        margin-top: 0.3em;
       }
     `;
         }
@@ -4250,8 +4420,9 @@
 
     let Envelope = class Envelope extends LitElement {
         constructor() {
-            super();
+            super(...arguments);
             this.label = "Envelope";
+            this.currentLearnerID = MidiControlID.NONE;
         }
         onAttackChange(event) {
             this.dispatchChange(OscillatorEnvelopeEvent.ATTACK, event.detail.value);
@@ -4272,26 +4443,50 @@
             return html `
       <panel-wrapper-element .label=${this.label}>
         <div class="envelope-controls">
-          <fader-element
-            label="A"
-            .value=${this.state.attack.value}
-            @change=${this.onAttackChange}
-          ></fader-element>
-          <fader-element
-            label="D"
-            .value=${this.state.decay.value}
-            @change=${this.onDecayChange}
-          ></fader-element>
-          <fader-element
-            label="S"
-            .value=${this.state.sustain.value}
-            @change=${this.onSustainChange}
-          ></fader-element>
-          <fader-element
-            label="R"
-            .value=${this.state.release.value}
-            @change=${this.onReleaseChange}
-          ></fader-element>
+          <midi-control-wrapper
+            .controlID=${MidiControlID.ATTACK}
+            .currentLearnerID=${this.currentLearnerID}
+          >
+            <fader-element
+              class="envelope-control focus"
+              label="A"
+              .value=${this.state.attack.value}
+              @change=${this.onAttackChange}
+            ></fader-element>
+          </midi-control-wrapper>
+          <midi-control-wrapper
+            .controlID=${MidiControlID.DECAY}
+            .currentLearnerID=${this.currentLearnerID}
+          >
+            <fader-element
+              class="envelope-control"
+              label="D"
+              .value=${this.state.decay.value}
+              @change=${this.onDecayChange}
+            ></fader-element>
+          </midi-control-wrapper>
+          <midi-control-wrapper
+            .controlID=${MidiControlID.SUSTAIN}
+            .currentLearnerID=${this.currentLearnerID}
+          >
+            <fader-element
+              class="envelope-control"
+              label="S"
+              .value=${this.state.sustain.value}
+              @change=${this.onSustainChange}
+            ></fader-element>
+          </midi-control-wrapper>
+          <midi-control-wrapper
+            .controlID=${MidiControlID.RELEASE}
+            .currentLearnerID=${this.currentLearnerID}
+          >
+            <fader-element
+              class="envelope-control"
+              label="R"
+              .value=${this.state.release.value}
+              @change=${this.onReleaseChange}
+            ></fader-element>
+          </midi-control-wrapper>
         </div>
       </panel-wrapper-element>
     `;
@@ -4323,9 +4518,12 @@
         property({ type: Object }),
         __metadata("design:type", Object)
     ], Envelope.prototype, "state", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Envelope.prototype, "currentLearnerID", void 0);
     Envelope = __decorate([
-        customElement("envelope-element"),
-        __metadata("design:paramtypes", [])
+        customElement("envelope-element")
     ], Envelope);
 
     var FilterEnvelopeEvent;
@@ -4336,6 +4534,10 @@
     })(FilterEnvelopeEvent || (FilterEnvelopeEvent = {}));
 
     let FilterEnvelope = class FilterEnvelope extends LitElement {
+        constructor() {
+            super(...arguments);
+            this.currentLearnerID = MidiControlID.NONE;
+        }
         onAttackChange(event) {
             this.dispatchChange(FilterEnvelopeEvent.ATTACK, event.detail.value);
         }
@@ -4353,23 +4555,38 @@
       <panel-wrapper-element label="Filter mod">
         <div class="envelope-controls">
           <div class="time-controls">
-            <fader-element
-              label="A"
-              .value=${this.state.attack.value}
-              @change=${this.onAttackChange}
-            ></fader-element>
-            <fader-element
-              label="D"
-              .value=${this.state.decay.value}
-              @change=${this.onDecayChange}
-            ></fader-element>
+            <midi-control-wrapper
+              controlID=${MidiControlID.CUT_ATTACK}
+              currentLearnerID=${this.currentLearnerID}
+            >
+              <fader-element
+                label="A"
+                .value=${this.state.attack.value}
+                @change=${this.onAttackChange}
+              ></fader-element>
+            </midi-control-wrapper>
+            <midi-control-wrapper
+              controlID=${MidiControlID.CUT_DECAY}
+              currentLearnerID=${this.currentLearnerID}
+            >
+              <fader-element
+                label="D"
+                .value=${this.state.decay.value}
+                @change=${this.onDecayChange}
+              ></fader-element>
+            </midi-control-wrapper>
           </div>
           <div class="mod-control">
-            <knob-element
-              label="mod."
-              .value=${this.state.amount.value}
-              @change=${this.onAmountChange}
-            ></knob-element>
+            <midi-control-wrapper
+              controlID=${MidiControlID.CUT_MOD}
+              currentLearnerID=${this.currentLearnerID}
+            >
+              <knob-element
+                label="mod."
+                .value=${this.state.amount.value}
+                @change=${this.onAmountChange}
+              ></knob-element>
+            </midi-control-wrapper>
           </div>
         </div>
       </panel-wrapper-element>
@@ -4406,6 +4623,10 @@
         property({ type: Object }),
         __metadata("design:type", Object)
     ], FilterEnvelope.prototype, "state", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], FilterEnvelope.prototype, "currentLearnerID", void 0);
     FilterEnvelope = __decorate([
         customElement("filter-envelope-element")
     ], FilterEnvelope);
@@ -4886,44 +5107,7 @@
         customElement("lcd-element")
     ], LCD);
 
-    class SelectOptions {
-        constructor(options) {
-            this.currentOption = 0;
-            this.options = options;
-            this.map = options.map.bind(options);
-        }
-        get size() {
-            return this.options.length;
-        }
-        set index(index) {
-            this.currentOption = index - 1;
-            this.next();
-        }
-        get index() {
-            return this.currentOption;
-        }
-        select(index) {
-            this.currentOption = index;
-            return this;
-        }
-        next() {
-            if (++this.currentOption >= this.options.length) {
-                this.currentOption = 0;
-            }
-            return this;
-        }
-        previous() {
-            if (--this.currentOption < 0) {
-                this.currentOption = this.options.length - 1;
-            }
-            return this;
-        }
-        getCurrent() {
-            return this.options[this.currentOption];
-        }
-    }
-
-    var _a$1;
+    var _a$2;
     let LCDSelector = class LCDSelector extends LitElement {
         render() {
             return html `
@@ -5019,7 +5203,7 @@
     };
     __decorate([
         property({ type: Object }),
-        __metadata("design:type", typeof (_a$1 = typeof SelectOptions !== "undefined" && SelectOptions) === "function" ? _a$1 : Object)
+        __metadata("design:type", typeof (_a$2 = typeof SelectOptions !== "undefined" && SelectOptions) === "function" ? _a$2 : Object)
     ], LCDSelector.prototype, "options", void 0);
     LCDSelector = __decorate([
         customElement("lcd-selector-element")
@@ -5050,6 +5234,9 @@
                 { value: LfoDestination.RESONANCE, name: "RESONANCE" },
             ]);
             this.shouldMidiLearn = false;
+            this.currentLearnerID = MidiControlID.NONE;
+            this.frequencyControlID = MidiControlID.LFO1_FREQ;
+            this.modAmountControlID = MidiControlID.LFO1_MOD;
         }
         onFrequencyChange(event) {
             this.dispatchChange(LfoEvent.FREQUENCY, event.detail.value);
@@ -5085,21 +5272,31 @@
           <div class="modulation-controls">
             <div class="modulation-control">
               <div class="frequency-control">
-                <knob-element
-                  .value=${this.state.frequency.value}
-                  @change=${this.onFrequencyChange}
-                  .shouldMidiLearn=${this.shouldMidiLearn}
-                ></knob-element>
+                <midi-control-wrapper
+                  controlID=${this.frequencyControlID}
+                  currentLearnerID=${this.currentLearnerID}
+                >
+                  <knob-element
+                    .value=${this.state.frequency.value}
+                    @change=${this.onFrequencyChange}
+                    .shouldMidiLearn=${this.shouldMidiLearn}
+                  ></knob-element>
+                </midi-control-wrapper>
               </div>
               <label>freq.</label>
             </div>
             <div class="modulation-control">
               <div class="mod-amount-control">
-                <knob-element
-                  .value=${this.state.modAmount.value}
-                  @change=${this.onModAmountChange}
-                  .shouldMidiLearn=${this.shouldMidiLearn}
-                ></knob-element>
+                <midi-control-wrapper
+                  controlID=${this.modAmountControlID}
+                  currentLearnerID=${this.currentLearnerID}
+                >
+                  <knob-element
+                    .value=${this.state.modAmount.value}
+                    @change=${this.onModAmountChange}
+                    .shouldMidiLearn=${this.shouldMidiLearn}
+                  ></knob-element>
+                </midi-control-wrapper>
               </div>
               <label>mod.</label>
             </div>
@@ -5162,7 +5359,7 @@
 
       label {
         display: block;
-        color: white;
+        color: var(--control-label-color);
         font-size: 0.8em;
       }
     `;
@@ -5180,58 +5377,21 @@
         property({ type: Boolean }),
         __metadata("design:type", Object)
     ], Lfo.prototype, "shouldMidiLearn", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Lfo.prototype, "currentLearnerID", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Lfo.prototype, "frequencyControlID", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Lfo.prototype, "modAmountControlID", void 0);
     Lfo = __decorate([
         customElement("lfo-element")
     ], Lfo);
-
-    var MidiControlID;
-    (function (MidiControlID) {
-        MidiControlID[MidiControlID["NONE"] = -1] = "NONE";
-        MidiControlID[MidiControlID["OSC1_SEMI"] = 0] = "OSC1_SEMI";
-        MidiControlID[MidiControlID["OSC1_CENT"] = 1] = "OSC1_CENT";
-        MidiControlID[MidiControlID["OSC_MIX"] = 2] = "OSC_MIX";
-        MidiControlID[MidiControlID["OSC2_SEMI"] = 3] = "OSC2_SEMI";
-        MidiControlID[MidiControlID["OSC2_CENT"] = 4] = "OSC2_CENT";
-        MidiControlID[MidiControlID["CUTOFF"] = 5] = "CUTOFF";
-        MidiControlID[MidiControlID["RESONANCE"] = 6] = "RESONANCE";
-        MidiControlID[MidiControlID["ATTACK"] = 7] = "ATTACK";
-        MidiControlID[MidiControlID["DECAY"] = 8] = "DECAY";
-        MidiControlID[MidiControlID["SUSTAIN"] = 9] = "SUSTAIN";
-        MidiControlID[MidiControlID["RELEASE"] = 10] = "RELEASE";
-        MidiControlID[MidiControlID["LFO1_FREQ"] = 11] = "LFO1_FREQ";
-        MidiControlID[MidiControlID["LFO1_MOD"] = 12] = "LFO1_MOD";
-        MidiControlID[MidiControlID["LFO2_FREQ"] = 13] = "LFO2_FREQ";
-        MidiControlID[MidiControlID["LFO2_MOD"] = 14] = "LFO2_MOD";
-        MidiControlID[MidiControlID["CUT_MOD"] = 15] = "CUT_MOD";
-        MidiControlID[MidiControlID["CUT_ATTACK"] = 16] = "CUT_ATTACK";
-        MidiControlID[MidiControlID["CUT_DECAY"] = 17] = "CUT_DECAY";
-    })(MidiControlID || (MidiControlID = {}));
-    function toSelectOption(option) {
-        return {
-            name: MidiControlID[option].replace(/_/g, " "),
-            value: option,
-        };
-    }
-    const MidiLearnOptions = new SelectOptions([
-        toSelectOption(MidiControlID.OSC1_SEMI),
-        toSelectOption(MidiControlID.OSC1_CENT),
-        toSelectOption(MidiControlID.OSC_MIX),
-        toSelectOption(MidiControlID.OSC2_SEMI),
-        toSelectOption(MidiControlID.OSC2_CENT),
-        toSelectOption(MidiControlID.CUTOFF),
-        toSelectOption(MidiControlID.RESONANCE),
-        toSelectOption(MidiControlID.ATTACK),
-        toSelectOption(MidiControlID.DECAY),
-        toSelectOption(MidiControlID.SUSTAIN),
-        toSelectOption(MidiControlID.RELEASE),
-        toSelectOption(MidiControlID.LFO1_FREQ),
-        toSelectOption(MidiControlID.LFO1_MOD),
-        toSelectOption(MidiControlID.LFO2_FREQ),
-        toSelectOption(MidiControlID.LFO2_MOD),
-        toSelectOption(MidiControlID.CUT_MOD),
-        toSelectOption(MidiControlID.CUT_ATTACK),
-        toSelectOption(MidiControlID.CUT_DECAY),
-    ]);
 
     function times(op, length) {
         return Array.from({ length }).map((_, i) => op(i));
@@ -5267,6 +5427,7 @@
       <div class="menu">
         <div class="button-wrapper">
           <button
+            disabled
             class="${this.computeButtonClasses(MenuMode.PRESET)}"
             @click=${this.createSwitchModeHandler(MenuMode.MIDI_CHANNEL)}
           >
@@ -5379,6 +5540,11 @@
         height: 100%;
 
         color: black;
+      }
+
+      .menu .button-wrapper button:disabled {
+        opacity: 0.5;
+        color: white;
       }
 
       .menu .button-wrapper button:focus {
@@ -5994,8 +6160,8 @@
         const midiDispatcher = new Dispatcher();
         const controlMap = new Map();
         let midiAccess;
-        let midiChannel = channel;
-        let midiLearnerID = MidiControlID.NONE;
+        let currentLearnerID = MidiControlID.NONE;
+        let currentChannel = channel;
         if (!midiNavigator.requestMIDIAccess) {
             return Promise.reject("MIDI is not supported, returning a noop dispatcher");
         }
@@ -6012,8 +6178,9 @@
             };
         }
         function dispatchMessageIfNeeded(message) {
-            const channel = message.data.channel;
-            if (channel !== midiChannel && midiChannel !== MidiOmniChannel) {
+            const messageChannel = message.data.channel;
+            if (messageChannel !== currentChannel &&
+                currentChannel !== MidiOmniChannel) {
                 return;
             }
             if (message.status === Status.NOTE_ON) {
@@ -6027,46 +6194,45 @@
             }
         }
         function dispatchControlChangeMessage(message) {
-            message.isMidiLearning = midiLearnerID !== MidiControlID.NONE;
+            message.isMidiLearning = currentLearnerID !== MidiControlID.NONE;
             message.controlID = controlMap.get(message.data.control);
             if (message.isMidiLearning) {
-                message.controlID = midiLearnerID;
+                message.controlID = currentLearnerID;
             }
             midiDispatcher.dispatch(MidiMessageEvent.CONTROL_CHANGE, message);
         }
         return Object.assign(midiDispatcher, {
-            setChannel(channel) {
-                midiChannel = channel;
-            },
-            setMidiLearnerID(id) {
-                midiLearnerID = id;
-            },
+            currentChannel,
+            currentLearnerID,
             mapControl(midiControl, id) {
+                controlMap.delete(midiControl);
                 controlMap.set(midiControl, id);
-                midiLearnerID = MidiControlID.NONE;
+                currentLearnerID = MidiControlID.NONE;
             },
         });
     }
 
-    var _a$2;
     let Root = class Root extends LitElement {
         constructor() {
             super();
+            this.currentLearnerID = MidiControlID.NONE;
             this.audioContext = new AudioContext();
             this.analyzer = this.audioContext.createAnalyser();
             this.voiceManager = new VoiceManager(this.audioContext);
             this.state = this.voiceManager.getState();
-            this.registerVoiceHandlers = this.registerVoiceHandlers.bind(this);
         }
         async connectedCallback() {
             super.connectedCallback();
             this.midiController = await createMidiController(MidiOmniChannel);
-            this.voiceManager
-                .setMidiController(this.midiController)
-                .connect(this.analyzer);
+            this.setUpVoiceManager();
             this.analyzer.connect(this.audioContext.destination);
             await this.audioContext.audioWorklet.addModule("voice-processor.js");
             this.registerVoiceHandlers();
+        }
+        setUpVoiceManager() {
+            this.voiceManager
+                .setMidiController(this.midiController)
+                .connect(this.analyzer);
         }
         async onKeyOn(event) {
             if (this.audioContext.state === "suspended") {
@@ -6114,8 +6280,6 @@
                 this.requestUpdate();
             });
         }
-        notifyMidiLearners(event) { }
-        registerMidiLearners() { }
         onOsc1Change(event) {
             switch (event.detail.type) {
                 case OscillatorEvent.WAVE_FORM:
@@ -6221,8 +6385,14 @@
             const { type, option } = event.detail;
             switch (type) {
                 case MenuMode.MIDI_LEARN:
-                    this.midiController.setMidiLearnerID(option.value);
+                    this.midiController.currentLearnerID = option.value;
+                    this.currentLearnerID = this.midiController.currentLearnerID;
+                    break;
+                case MenuMode.MIDI_CHANNEL:
+                    this.midiController.currentChannel = option.value;
+                    break;
             }
+            this.requestUpdate();
         }
         render() {
             return html `
@@ -6236,6 +6406,9 @@
           </div>
           <div class="oscillators">
             <oscillator-element
+              .currentLearnerID=${this.currentLearnerID}
+              .semiControlID=${MidiControlID.OSC1_SEMI}
+              .centControlID=${MidiControlID.OSC1_CENT}
               label="Osc 1"
               .state=${this.state.osc1}
               @change=${this.onOsc1Change}
@@ -6243,41 +6416,58 @@
             <div class="oscillator-mix">
               <panel-wrapper-element class="oscillator-mix-wrapper">
                 <div class="oscillator-mix-control">
-                  <knob-element
-                    label="osc mix"
-                    .value=${this.state.osc2Amplitude.value}
-                    @change=${this.onOscMixChange}
-                  ></knob-element>
+                  <midi-control-wrapper
+                    .controlID=${MidiControlID.OSC_MIX}
+                    .currentLearnerID=${this.currentLearnerID}
+                  >
+                    <knob-element
+                      label="osc mix"
+                      .value=${this.state.osc2Amplitude.value}
+                      @change=${this.onOscMixChange}
+                    ></knob-element>
+                  </midi-control-wrapper>
                 </div>
               </panel-wrapper-element>
             </div>
             <oscillator-element
+              .currentLearnerID=${this.currentLearnerID}
+              .semiControlID=${MidiControlID.OSC2_SEMI}
+              .centControlID=${MidiControlID.OSC2_CENT}
               label="Osc 2"
               .state=${this.state.osc2}
               @change=${this.onOsc2Change}
             ></oscillator-element>
             <filter-element
+              .currentLearnerID=${this.currentLearnerID}
               .state=${this.state.filter}
               @change=${this.onFilterChange}
             ></filter-element>
           </div>
           <div class="envelopes">
             <envelope-element
+              .currentLearnerID=${this.currentLearnerID}
               label="envelope"
               .state=${this.state.envelope}
               @change=${this.onOsc1EnvelopeChange}
             ></envelope-element>
             <lfo-element
+              .currentLearnerID=${this.currentLearnerID}
+              .frequencyControlID=${MidiControlID.LFO1_FREQ}
+              .modAmountControlID=${MidiControlID.LFO1_MOD}
               label="lfo 1"
               .state=${this.state.lfo1}
               @change=${this.onLfo1Change}
             ></lfo-element>
             <lfo-element
+              .currentLearnerID=${this.currentLearnerID}
+              .frequencyControlID=${MidiControlID.LFO2_FREQ}
+              .modAmountControlID=${MidiControlID.LFO2_MOD}
               label="lfo 2"
               .state=${this.state.lfo2}
               @change=${this.onLfo2Change}
             ></lfo-element>
             <filter-envelope-element
+              .currentLearnerID=${this.currentLearnerID}
               .state=${this.state.cutoffMod}
               @change=${this.onFilterEnvelopeChange}
             ></filter-envelope-element>
@@ -6340,9 +6530,19 @@
       .synth .oscillator-mix {
         --knob-size: 60px;
         --panel-wrapper-background-color: #7a1621;
-
         display: inline-flex;
         justify-content: center;
+      }
+
+      .synth .oscillator-mix.focused {
+        animation: control-focus 1s ease-in-out infinite;
+      }
+
+      @keyframes control-focus {
+        to {
+          --control-handle-color: #abbdcd;
+          --control-top-color: #252525;
+        }
       }
 
       .synth .oscillator-mix .oscillator-mix-control {
@@ -6368,10 +6568,6 @@
     `;
         }
     };
-    __decorate([
-        property({ type: Object }),
-        __metadata("design:type", typeof (_a$2 = typeof AnalyserNode !== "undefined" && AnalyserNode) === "function" ? _a$2 : Object)
-    ], Root.prototype, "analyzer", void 0);
     Root = __decorate([
         customElement("child-element"),
         __metadata("design:paramtypes", [])
