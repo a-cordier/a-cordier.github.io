@@ -3689,6 +3689,12 @@
         get index() {
             return this.currentOption;
         }
+        selectValue(value) {
+            const idx = this.options.findIndex((option) => option.value === value);
+            if (idx > -1) {
+                this.currentOption = idx;
+            }
+        }
         select(index) {
             this.currentOption = index;
             return this;
@@ -3744,19 +3750,19 @@
         toSelectOption(MidiControlID.OSC_MIX),
         toSelectOption(MidiControlID.OSC2_SEMI),
         toSelectOption(MidiControlID.OSC2_CENT),
-        toSelectOption(MidiControlID.CUTOFF),
-        toSelectOption(MidiControlID.RESONANCE),
         toSelectOption(MidiControlID.ATTACK),
         toSelectOption(MidiControlID.DECAY),
         toSelectOption(MidiControlID.SUSTAIN),
         toSelectOption(MidiControlID.RELEASE),
+        toSelectOption(MidiControlID.CUTOFF),
+        toSelectOption(MidiControlID.RESONANCE),
+        toSelectOption(MidiControlID.CUT_MOD),
+        toSelectOption(MidiControlID.CUT_ATTACK),
+        toSelectOption(MidiControlID.CUT_DECAY),
         toSelectOption(MidiControlID.LFO1_FREQ),
         toSelectOption(MidiControlID.LFO1_MOD),
         toSelectOption(MidiControlID.LFO2_FREQ),
         toSelectOption(MidiControlID.LFO2_MOD),
-        toSelectOption(MidiControlID.CUT_MOD),
-        toSelectOption(MidiControlID.CUT_ATTACK),
-        toSelectOption(MidiControlID.CUT_DECAY),
     ]);
 
     let Oscillator = class Oscillator extends LitElement {
@@ -5119,6 +5125,10 @@
       </div>
     `;
         }
+        async connectedCallback() {
+            super.connectedCallback();
+            this.options.selectValue(this.value);
+        }
         createOptionSelector(_, index) {
             return html `
       <button
@@ -5205,6 +5215,10 @@
         property({ type: Object }),
         __metadata("design:type", typeof (_a$2 = typeof SelectOptions !== "undefined" && SelectOptions) === "function" ? _a$2 : Object)
     ], LCDSelector.prototype, "options", void 0);
+    __decorate([
+        property({ type: Object }),
+        __metadata("design:type", Object)
+    ], LCDSelector.prototype, "value", void 0);
     LCDSelector = __decorate([
         customElement("lcd-selector-element")
     ], LCDSelector);
@@ -5266,6 +5280,7 @@
           <div class="destination-control">
             <lcd-selector-element
               .options=${this.destinations}
+              .value=${this.state.destination.value}
               @change=${this.onDestinationChange}
             ></lcd-selector-element>
           </div>
@@ -5774,8 +5789,8 @@
             lfo2: {
                 mode: new SelectControl(state.lfo2.mode.value),
                 destination: new SelectControl(state.lfo2.destination.value),
-                frequency: new MidiControl(MidiControlID.LFO2_FREQ, state.lfo1.frequency.value),
-                modAmount: new MidiControl(MidiControlID.LFO2_MOD, state.lfo1.modAmount.value),
+                frequency: new MidiControl(MidiControlID.LFO2_FREQ, state.lfo2.frequency.value),
+                modAmount: new MidiControl(MidiControlID.LFO2_MOD, state.lfo2.modAmount.value),
             },
         };
     }
@@ -5845,42 +5860,42 @@
             this.state = createVoiceState({
                 osc1: {
                     mode: { value: OscillatorMode.SAWTOOTH },
-                    semiShift: { value: 127 / 2 },
+                    semiShift: { value: 127 - 127 / 4 },
                     centShift: { value: 127 / 2 },
                 },
                 osc2: {
                     mode: { value: OscillatorMode.SAWTOOTH },
                     semiShift: { value: 127 / 2 },
-                    centShift: { value: 127 / 2 },
+                    centShift: { value: 127 - 127 / 3 },
                 },
-                osc2Amplitude: { value: 127 / 2 },
+                osc2Amplitude: { value: 127 - 127 / 4 },
                 envelope: {
-                    attack: { value: 0 },
+                    attack: { value: 127 / 12 },
                     decay: { value: 127 / 2 },
                     sustain: { value: 127 },
-                    release: { value: 127 / 4 },
+                    release: { value: 127 - 127 / 3 },
                 },
                 filter: {
-                    mode: { value: FilterMode.LOWPASS },
-                    cutoff: { value: 127 },
-                    resonance: { value: 0 },
+                    mode: { value: FilterMode.LOWPASS_PLUS },
+                    cutoff: { value: 0 },
+                    resonance: { value: 127 - 127 / 4 },
                 },
                 cutoffMod: {
-                    attack: { value: 0 },
-                    decay: { value: 127 / 2 },
-                    amount: { value: 0 },
+                    attack: { value: 127 / 8 },
+                    decay: { value: 127 / 3 },
+                    amount: { value: 127 / 4 },
                 },
                 lfo1: {
-                    mode: { value: OscillatorMode.SINE },
-                    frequency: { value: 127 / 2 },
-                    modAmount: { value: 0 },
-                    destination: { value: LfoDestination.OSCILLATOR_MIX },
+                    mode: { value: OscillatorMode.SQUARE },
+                    frequency: { value: 127 / 8 },
+                    modAmount: { value: 127 },
+                    destination: { value: LfoDestination.FREQUENCY },
                 },
                 lfo2: {
-                    mode: { value: OscillatorMode.SINE },
-                    frequency: { value: 127 / 2 },
-                    modAmount: { value: 0 },
-                    destination: { value: LfoDestination.OSCILLATOR_MIX },
+                    mode: { value: OscillatorMode.SQUARE },
+                    frequency: { value: 127 / 4 },
+                    modAmount: { value: 127 - 127 / 8 },
+                    destination: { value: LfoDestination.CUTOFF },
                 },
             });
             this.voiceGenerator = createVoiceGenerator(audioContext);
@@ -5983,7 +5998,7 @@
                 case MidiControlID.LFO1_MOD:
                     return this.dispatch(VoiceEvent.LFO1, Object.assign(Object.assign({}, this.state.lfo1), { modAmount: control.clone() }));
                 case MidiControlID.LFO2_FREQ:
-                    return this.dispatch(VoiceEvent.LFO1, Object.assign(Object.assign({}, this.state.lfo1), { frequency: control.clone() }));
+                    return this.dispatch(VoiceEvent.LFO2, Object.assign(Object.assign({}, this.state.lfo2), { frequency: control.clone() }));
                 case MidiControlID.LFO2_MOD:
                     return this.dispatch(VoiceEvent.LFO2, Object.assign(Object.assign({}, this.state.lfo2), { modAmount: control.clone() }));
                 case MidiControlID.CUT_ATTACK:
@@ -6220,6 +6235,7 @@
         constructor() {
             super();
             this.currentLearnerID = MidiControlID.NONE;
+            this.showVizualizer = false;
             this.audioContext = new AudioContext();
             this.analyzer = this.audioContext.createAnalyser();
             this.voiceManager = new VoiceManager(this.audioContext);
@@ -6398,6 +6414,19 @@
             }
             this.requestUpdate();
         }
+        computeVizualizerIfEnabled() {
+            if (this.showVizualizer) {
+                return html `
+        <div class="visualizer">
+          <visualizer-element
+            .analyser=${this.analyzer}
+            width="650"
+            height="200"
+          ></visualizer-element>
+        </div>
+      `;
+            }
+        }
         render() {
             return html `
       <div class="content">
@@ -6486,13 +6515,7 @@
             ></keys-element>
           </div>
         </div>
-        <div class="visualizer">
-          <visualizer-element
-            .analyser=${this.analyzer}
-            width="650"
-            height="200"
-          ></visualizer-element>
-        </div>
+        ${this.computeVizualizerIfEnabled()}
       </div>
     `;
         }
