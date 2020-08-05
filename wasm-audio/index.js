@@ -5849,6 +5849,12 @@
         VoiceEvent["CUTOFF_MOD"] = "CUTOFF_MOD";
     })(VoiceEvent || (VoiceEvent = {}));
 
+    var KeyboardMessage;
+    (function (KeyboardMessage) {
+        KeyboardMessage["NOTE_ON"] = "NOTE_ON";
+        KeyboardMessage["NOTE_OFF"] = "NOTE_OFF";
+    })(KeyboardMessage || (KeyboardMessage = {}));
+
     function* createVoiceGenerator(audioContext) {
         for (;;) {
             yield new WasmVoiceNode(audioContext);
@@ -5864,7 +5870,7 @@
                     centShift: { value: 127 / 2 },
                 },
                 osc2: {
-                    mode: { value: OscillatorMode.SAWTOOTH },
+                    mode: { value: OscillatorMode.SINE },
                     semiShift: { value: 127 / 2 },
                     centShift: { value: 127 - 127 / 3 },
                 },
@@ -5873,11 +5879,11 @@
                     attack: { value: 127 / 12 },
                     decay: { value: 127 / 2 },
                     sustain: { value: 127 },
-                    release: { value: 127 - 127 / 3 },
+                    release: { value: 127 / 4 },
                 },
                 filter: {
                     mode: { value: FilterMode.LOWPASS_PLUS },
-                    cutoff: { value: 0 },
+                    cutoff: { value: 127 / 4 },
                     resonance: { value: 127 - 127 / 4 },
                 },
                 cutoffMod: {
@@ -5894,7 +5900,7 @@
                 lfo2: {
                     mode: { value: OscillatorMode.SQUARE },
                     frequency: { value: 127 / 4 },
-                    modAmount: { value: 127 - 127 / 8 },
+                    modAmount: { value: 127 / 12 },
                     destination: { value: LfoDestination.CUTOFF },
                 },
             });
@@ -5947,6 +5953,12 @@
                 .subscribe(MidiMessageEvent.NOTE_OFF, this.onMidiNoteOff)
                 .subscribe(MidiMessageEvent.CONTROL_CHANGE, this.onMidiCC);
             this.midiController = midiController;
+            return this;
+        }
+        setKeyBoardcontroller(keyBoardController) {
+            keyBoardController
+                .subscribe(KeyboardMessage.NOTE_ON, this.onMidiNoteOn)
+                .subscribe(KeyboardMessage.NOTE_OFF, this.onMidiNoteOff);
             return this;
         }
         onMidiNoteOn(message) {
@@ -6231,6 +6243,71 @@
         });
     }
 
+    const midiOctaves = createMidiOctaves(440);
+    /* prettier-ignore */
+    const keyMapping = new Map([
+        ["w", midiOctaves[3][0]],
+        ["x", midiOctaves[3][2]],
+        ["c", midiOctaves[3][4]],
+        ["v", midiOctaves[3][5]],
+        ["b", midiOctaves[3][7]],
+        ["n", midiOctaves[3][9]],
+        ["q", midiOctaves[3][11]],
+        ["s", midiOctaves[4][0]],
+        ["d", midiOctaves[4][2]],
+        ["f", midiOctaves[4][4]],
+        ["g", midiOctaves[4][5]],
+        ["h", midiOctaves[4][7]],
+        ["j", midiOctaves[4][9]],
+        ["k", midiOctaves[4][11]],
+        ["l", midiOctaves[5][0]],
+        ["m", midiOctaves[5][2]],
+        ["a", midiOctaves[3][1]],
+        ["z", midiOctaves[3][3]],
+        ["e", midiOctaves[3][6]],
+        ["r", midiOctaves[3][8]],
+        ["t", midiOctaves[3][10]],
+        ["y", midiOctaves[4][1]],
+        ["u", midiOctaves[4][3]],
+        ["i", midiOctaves[4][6]],
+        ["o", midiOctaves[4][8]],
+        ["p", midiOctaves[4][10]],
+    ]);
+    class KeyBoardController extends Dispatcher {
+        constructor() {
+            super();
+            this.pressedKeys = new Set();
+            this.registerKeyDownHandler();
+            this.registerKeyUpHandler();
+        }
+        registerKeyDownHandler() {
+            document.addEventListener("keydown", ({ key }) => {
+                if (keyMapping.has(key) && !this.pressedKeys.has(key)) {
+                    this.pressedKeys.add(key);
+                    this.dispatch(KeyboardMessage.NOTE_ON, {
+                        data: {
+                            value: keyMapping.get(key).midiValue,
+                            velocity: 127,
+                            channel: MidiOmniChannel,
+                        },
+                    });
+                }
+            });
+        }
+        registerKeyUpHandler() {
+            document.addEventListener("keyup", ({ key }) => {
+                if (this.pressedKeys.delete(key)) {
+                    this.dispatch(KeyboardMessage.NOTE_OFF, {
+                        data: {
+                            value: keyMapping.get(key).midiValue,
+                            channel: MidiOmniChannel,
+                        },
+                    });
+                }
+            });
+        }
+    }
+
     let Root = class Root extends LitElement {
         constructor() {
             super();
@@ -6252,6 +6329,7 @@
         setUpVoiceManager() {
             this.voiceManager
                 .setMidiController(this.midiController)
+                .setKeyBoardcontroller(new KeyBoardController())
                 .connect(this.analyzer);
         }
         async onKeyOn(event) {
