@@ -2726,97 +2726,6 @@
         return octaves;
     }
 
-    const Status = Object.freeze({
-        NOTE_OFF: 0x08,
-        NOTE_ON: 0x09,
-        NOTE_AFTER_TOUCH: 0x0a,
-        CONTROL_CHANGE: 0x0b,
-        PROGRAM_CHANGE: 0x0c,
-        CHANNEL_AFTER_TOUCH: 0x0d,
-        PITCH_BEND: 0x0e,
-        SYSEX_MESSAGE: 0xf0,
-    });
-    function isNote(message) {
-        return (message &&
-            (message.status === Status.NOTE_ON || message.status === Status.NOTE_OFF));
-    }
-    function isControlChange(message) {
-        return message && message.status === Status.CONTROL_CHANGE;
-    }
-    function Note(data, channel) {
-        return {
-            data: {
-                value: data.getUint8(1),
-                velocity: data.getUint8(2),
-                channel,
-            },
-        };
-    }
-    function NoteOn(data, channel) {
-        return Object.assign(Object.assign({}, Note(data, channel)), { status: Status.NOTE_ON });
-    }
-    function NoteOff(data, channel) {
-        return Object.assign(Object.assign({}, Note(data, channel)), { status: Status.NOTE_OFF });
-    }
-    function NoteAfterTouch(data, channel) {
-        return {
-            status: Status.NOTE_AFTER_TOUCH,
-            data: {
-                note: data.getUint8(0),
-                value: data.getUint8(1),
-                channel,
-            },
-        };
-    }
-    function ControlChange(data, channel) {
-        return {
-            status: Status.CONTROL_CHANGE,
-            data: {
-                control: data.getUint8(1),
-                value: data.getUint8(2),
-                channel,
-            },
-        };
-    }
-    function ProgramChange(data, channel) {
-        return {
-            status: Status.PROGRAM_CHANGE,
-            data: {
-                value: data.getUint8(0),
-                channel,
-            },
-        };
-    }
-    function ChannelAfterTouch(data, channel, offset) {
-        return {
-            status: Status.CHANNEL_AFTER_TOUCH,
-            data: {
-                value: data.getUint8(offset),
-                channel,
-            },
-        };
-    }
-    function newMidiMessage(data, offset = 0) {
-        /* eslint-disable no-param-reassign */
-        const status = data.getUint8(offset) >> 4;
-        const channel = (data.getUint8(offset) & 0xf) + 1;
-        switch (status) {
-            case Status.NOTE_ON:
-                return NoteOn(data, channel);
-            case Status.NOTE_OFF:
-                return NoteOff(data, channel);
-            case Status.NOTE_AFTER_TOUCH:
-                return NoteAfterTouch(data, channel);
-            case Status.CONTROL_CHANGE:
-                return ControlChange(data, channel);
-            case Status.PROGRAM_CHANGE:
-                return ProgramChange(data, channel);
-            case Status.CHANNEL_AFTER_TOUCH:
-                return ChannelAfterTouch(data, channel, offset);
-            // ignore unknown running status
-        }
-    }
-
     const octaves = createMidiOctaves(440).map(mapKeys);
     function mapKeys(octave) {
         return octave.map((note) => {
@@ -2835,10 +2744,8 @@
     let Keys = class Keys extends LitElement {
         constructor() {
             super(...arguments);
-            this.lowerKey = 48;
-            this.higherKey = 59;
-            this.pressedKeys = new Set();
-            this.midiChannel = 1;
+            this.lowerKey = 36;
+            this.higherKey = 61;
             this.mouseControlledKey = null;
         }
         get octaves() {
@@ -2847,13 +2754,9 @@
         async connectedCallback() {
             super.connectedCallback();
             this.registerMouseUpHandler();
-            await this.registerMidiHandler();
         }
         registerMouseUpHandler() {
             document.addEventListener("mouseup", this.mouseUp.bind(this));
-        }
-        async registerMidiHandler() {
-            // TODO: HANDLE FROM VOICE MANAGER
         }
         mouseUp() {
             if (!!this.mouseControlledKey) {
@@ -2882,34 +2785,17 @@
         findKey(midiValue) {
             return octaves[computeOctave(midiValue)][computePitchClassIndex(midiValue)];
         }
-        async onMidiMessage(message) {
-            const midiMessage = newMidiMessage(new DataView(message.data.buffer));
-            if (!isNote(midiMessage)) {
-                return;
-            }
-            if (midiMessage.data.channel !== this.midiChannel) {
-                return;
-            }
-            const key = this.findKey(midiMessage.data.value);
-            if (!key) {
-                return;
-            }
-            if (midiMessage.status === Status.NOTE_ON) {
-                return await this.keyOn(key);
-            }
-            return await this.keyOff(key);
-        }
         async keyOn(key) {
-            this.pressedKeys.add(key);
+            this.pressedKeys.add(key.midiValue);
             this.dispatchEvent(new CustomEvent("keyOn", {
-                detail: Object.assign(Object.assign({}, key), { channel: this.midiChannel }),
+                detail: key,
             }));
             await this.requestUpdate();
         }
         async keyOff(key) {
-            this.pressedKeys.delete(key);
+            this.pressedKeys.delete(key.midiValue);
             this.dispatchEvent(new CustomEvent("keyOff", {
-                detail: Object.assign(Object.assign({}, key), { channel: this.midiChannel }),
+                detail: key,
             }));
             await this.requestUpdate();
         }
@@ -2931,7 +2817,7 @@
     `;
         }
         computeKeyClasses(key) {
-            return classMap(Object.assign(Object.assign({}, key.classes), { "key--pressed": this.pressedKeys.has(key) }));
+            return classMap(Object.assign(Object.assign({}, key.classes), { "key--pressed": this.pressedKeys && this.pressedKeys.has(key.midiValue) }));
         }
         render() {
             return html `
@@ -2946,12 +2832,13 @@
       :host {
         user-select: none;
         outline: none;
+        width: 100%;
       }
 
       .octaves {
         display: flex;
         justify-content: flex-start;
-        height: var(--key-height, 150px);
+        height: var(--key-height, 100%);
       }
 
       .octave {
@@ -2959,6 +2846,7 @@
 
         display: grid;
         grid-template-columns: repeat(84, 1fr);
+
         margin-left: -7px;
       }
 
@@ -3064,10 +2952,6 @@
         property({ type: Object }),
         __metadata("design:type", Object)
     ], Keys.prototype, "pressedKeys", void 0);
-    __decorate([
-        property({ type: Number }),
-        __metadata("design:type", Object)
-    ], Keys.prototype, "midiChannel", void 0);
     Keys = __decorate([
         customElement("keys-element")
     ], Keys);
@@ -5474,6 +5358,9 @@
         <div class="button-wrapper select">
           <button @click=${this.nextOption}>NEXT</button>
         </div>
+        <div class="label">
+          WASM POLY
+        </div>
       </div>
     `;
         }
@@ -5576,6 +5463,17 @@
 
       .menu .button-wrapper.select button:active {
         transform: scale(0.999);
+      }
+
+      .menu .label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2em;
+        font-weight: 700;
+        line-height: 1em;
+        color: var(--control-top-color);
+        margin-left: 1em;
       }
     `;
         }
@@ -5839,6 +5737,8 @@
 
     var VoiceEvent;
     (function (VoiceEvent) {
+        VoiceEvent["NOTE_ON"] = "NOTE_ON";
+        VoiceEvent["NOTE_OFF"] = "NOTE_OFF";
         VoiceEvent["OSC1"] = "OSC1";
         VoiceEvent["OSC_MIX"] = "OSC_MIX";
         VoiceEvent["OSC2"] = "OSC2";
@@ -5964,11 +5864,12 @@
         onMidiNoteOn(message) {
             const note = midiToNote(message.data.value);
             this.next(note);
-            this.dispatch(MidiMessageEvent.NOTE_ON, note);
+            this.dispatch(VoiceEvent.NOTE_ON, note);
         }
         onMidiNoteOff(message) {
-            this.stop({ midiValue: message.data.value });
-            this.dispatch(MidiMessageEvent.NOTE_OFF, message);
+            const note = { midiValue: message.data.value };
+            this.stop(note);
+            this.dispatch(VoiceEvent.NOTE_OFF, note);
         }
         onMidiCC(message) {
             const midiControl = this.state.findMidiControlById(message.controlID);
@@ -6182,6 +6083,93 @@
         }
     }
 
+    const Status = Object.freeze({
+        NOTE_OFF: 0x08,
+        NOTE_ON: 0x09,
+        NOTE_AFTER_TOUCH: 0x0a,
+        CONTROL_CHANGE: 0x0b,
+        PROGRAM_CHANGE: 0x0c,
+        CHANNEL_AFTER_TOUCH: 0x0d,
+        PITCH_BEND: 0x0e,
+        SYSEX_MESSAGE: 0xf0,
+    });
+    function isControlChange(message) {
+        return message && message.status === Status.CONTROL_CHANGE;
+    }
+    function Note(data, channel) {
+        return {
+            data: {
+                value: data.getUint8(1),
+                velocity: data.getUint8(2),
+                channel,
+            },
+        };
+    }
+    function NoteOn(data, channel) {
+        return Object.assign(Object.assign({}, Note(data, channel)), { status: Status.NOTE_ON });
+    }
+    function NoteOff(data, channel) {
+        return Object.assign(Object.assign({}, Note(data, channel)), { status: Status.NOTE_OFF });
+    }
+    function NoteAfterTouch(data, channel) {
+        return {
+            status: Status.NOTE_AFTER_TOUCH,
+            data: {
+                note: data.getUint8(0),
+                value: data.getUint8(1),
+                channel,
+            },
+        };
+    }
+    function ControlChange(data, channel) {
+        return {
+            status: Status.CONTROL_CHANGE,
+            data: {
+                control: data.getUint8(1),
+                value: data.getUint8(2),
+                channel,
+            },
+        };
+    }
+    function ProgramChange(data, channel) {
+        return {
+            status: Status.PROGRAM_CHANGE,
+            data: {
+                value: data.getUint8(0),
+                channel,
+            },
+        };
+    }
+    function ChannelAfterTouch(data, channel, offset) {
+        return {
+            status: Status.CHANNEL_AFTER_TOUCH,
+            data: {
+                value: data.getUint8(offset),
+                channel,
+            },
+        };
+    }
+    function newMidiMessage(data, offset = 0) {
+        /* eslint-disable no-param-reassign */
+        const status = data.getUint8(offset) >> 4;
+        const channel = (data.getUint8(offset) & 0xf) + 1;
+        switch (status) {
+            case Status.NOTE_ON:
+                return NoteOn(data, channel);
+            case Status.NOTE_OFF:
+                return NoteOff(data, channel);
+            case Status.NOTE_AFTER_TOUCH:
+                return NoteAfterTouch(data, channel);
+            case Status.CONTROL_CHANGE:
+                return ControlChange(data, channel);
+            case Status.PROGRAM_CHANGE:
+                return ProgramChange(data, channel);
+            case Status.CHANNEL_AFTER_TOUCH:
+                return ChannelAfterTouch(data, channel, offset);
+            // ignore unknown running status
+        }
+    }
+
     async function createMidiController(channel = MidiOmniChannel) {
         const midiNavigator = navigator;
         const midiDispatcher = new Dispatcher();
@@ -6313,6 +6301,7 @@
             super();
             this.currentLearnerID = MidiControlID.NONE;
             this.showVizualizer = false;
+            this.pressedKeys = new Set();
             this.audioContext = new AudioContext();
             this.analyzer = this.audioContext.createAnalyser();
             this.voiceManager = new VoiceManager(this.audioContext);
@@ -6345,6 +6334,16 @@
         }
         registerVoiceHandlers() {
             this.voiceManager
+                .subscribe(VoiceEvent.NOTE_ON, (note) => {
+                this.pressedKeys.add(note.midiValue);
+                this.pressedKeys = new Set([...this.pressedKeys.values()]);
+                this.requestUpdate();
+            })
+                .subscribe(VoiceEvent.NOTE_OFF, (note) => {
+                this.pressedKeys.delete(note.midiValue);
+                this.pressedKeys = new Set([...this.pressedKeys.values()]);
+                this.requestUpdate();
+            })
                 .subscribe(VoiceEvent.OSC1, (newState) => {
                 this.state.osc1 = newState;
                 this.requestUpdate();
@@ -6583,14 +6582,16 @@
               @change=${this.onFilterEnvelopeChange}
             ></filter-envelope-element>
           </div>
-        </div>
-        <div class="sequencer">
-          <div class="keys">
-            <keys-element
-              midiChannel="1"
-              @keyOn="${this.onKeyOn},"
-              @keyOff=${this.onKeyOff}
-            ></keys-element>
+          <div class="keyboard">
+            <panel-wrapper-element>
+              <div class="keys">
+                <keys-element
+                  .pressedKeys=${this.pressedKeys}
+                  @keyOn=${this.onKeyOn}
+                  @keyOff=${this.onKeyOff}
+                ></keys-element>
+              </div>
+            </panel-wrapper-element>
           </div>
         </div>
         ${this.computeVizualizerIfEnabled()}
@@ -6665,14 +6666,29 @@
         margin-top: 1em;
       }
 
-      .sequencer {
-        width: 30%;
-        margin: 1em auto;
+      .synth .keyboard {
         --key-height: 100px;
+        --panel-wrapper-background-color: var(--keyboard-panel-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 0.5em;
+      }
+
+      .synth .keyboard .keys {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 635px;
+        margin: -1.5em auto 0.5em 0.6em;
       }
     `;
         }
     };
+    __decorate([
+        property({ type: Object }),
+        __metadata("design:type", Object)
+    ], Root.prototype, "pressedKeys", void 0);
     Root = __decorate([
         customElement("child-element"),
         __metadata("design:paramtypes", [])
