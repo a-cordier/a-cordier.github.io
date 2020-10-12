@@ -4199,7 +4199,7 @@
             const wrapper = this.cursorWrapperElement;
             const height = wrapper.offsetHeight;
             const position = event.pageY - (parent.offsetTop + wrapper.offsetTop);
-            this.updateValue((1 - position / height) * 128);
+            this.updateValue((1 - position / height) * 127);
             const drag = (event) => {
                 event.preventDefault();
                 this.updateValue(this.value - event.movementY);
@@ -4216,10 +4216,7 @@
             this.updateValue(this.value + event.deltaY);
         }
         updateValue(value) {
-            if (value < 0 || value > 127) {
-                return;
-            }
-            this.value = value;
+            this.value = clamp({ min: 0, max: 127 }, value);
             this.dispatchEvent(new CustomEvent("change", { detail: { value: this.value } }));
         }
         computeFaderCursorStyle() {
@@ -5765,6 +5762,47 @@
             super();
             this.state = createVoiceState({
                 osc1: {
+                    mode: { value: OscillatorMode.SINE },
+                    semiShift: { value: 127 - 127 / 4 },
+                    centShift: { value: 127 / 2 },
+                },
+                osc2: {
+                    mode: { value: OscillatorMode.SINE },
+                    semiShift: { value: 127 / 2 },
+                    centShift: { value: 127 - 127 / 3 },
+                },
+                osc2Amplitude: { value: 0 },
+                envelope: {
+                    attack: { value: 1 },
+                    decay: { value: 127 / 2 },
+                    sustain: { value: 127 / 4 },
+                    release: { value: 1 },
+                },
+                filter: {
+                    mode: { value: FilterMode.LOWPASS_PLUS },
+                    cutoff: { value: 127 },
+                    resonance: { value: 0 },
+                },
+                cutoffMod: {
+                    attack: { value: 127 / 8 },
+                    decay: { value: 127 / 3 },
+                    amount: { value: 0 },
+                },
+                lfo1: {
+                    mode: { value: OscillatorMode.SQUARE },
+                    frequency: { value: 127 / 8 },
+                    modAmount: { value: 0 },
+                    destination: { value: LfoDestination.FREQUENCY },
+                },
+                lfo2: {
+                    mode: { value: OscillatorMode.SQUARE },
+                    frequency: { value: 127 / 4 },
+                    modAmount: { value: 0 },
+                    destination: { value: LfoDestination.CUTOFF },
+                },
+            });
+            this._state = createVoiceState({
+                osc1: {
                     mode: { value: OscillatorMode.SAWTOOTH },
                     semiShift: { value: 127 - 127 / 4 },
                     centShift: { value: 127 / 2 },
@@ -5776,10 +5814,10 @@
                 },
                 osc2Amplitude: { value: 127 - 127 / 4 },
                 envelope: {
-                    attack: { value: 127 / 12 },
-                    decay: { value: 127 / 2 },
-                    sustain: { value: 127 },
-                    release: { value: 127 / 4 },
+                    attack: { value: 0 },
+                    decay: { value: 127 / 4 },
+                    sustain: { value: 127 / 2 },
+                    release: { value: 0 },
                 },
                 filter: {
                     mode: { value: FilterMode.LOWPASS_PLUS },
@@ -5826,7 +5864,7 @@
             voice.osc2Amplitude.value = this.state.osc2Amplitude.value;
             voice.amplitudeAttack.value = this.state.envelope.attack.value;
             voice.amplitudeDecay.value = this.state.envelope.decay.value;
-            voice.amplitudeSustain.value = this.state.envelope.decay.value;
+            voice.amplitudeSustain.value = this.state.envelope.sustain.value;
             voice.amplitudeRelease.value = this.state.envelope.release.value;
             voice.filterMode = this.state.filter.mode.value;
             voice.cutoff.value = this.state.filter.cutoff.value;
@@ -5970,19 +6008,19 @@
         get osc2() {
             return this.state.osc2;
         }
-        setOsc1EnvelopeAttack(newAttackTime) {
+        setAmplitudeEnvelopeAttack(newAttackTime) {
             this.state.envelope.attack.value = newAttackTime;
             return this;
         }
-        setOsc1EnvelopeDecay(newDecayTime) {
+        setAmplitudeEnvelopeDecay(newDecayTime) {
             this.state.envelope.decay.value = newDecayTime;
             return this;
         }
-        setOsc1EnvelopeSustain(newSustainLevel) {
+        setAmplitudeEnvelopeSustain(newSustainLevel) {
             this.state.envelope.sustain.value = newSustainLevel;
             return this;
         }
-        setOsc1EnvelopeRelease(newReleaseTime) {
+        setAmplitudeEnvelopeRelease(newReleaseTime) {
             this.state.envelope.release.value = newReleaseTime;
             return this;
         }
@@ -6300,7 +6338,7 @@
         constructor() {
             super();
             this.currentLearnerID = MidiControlID.NONE;
-            this.showVizualizer = false;
+            this.showVizualizer = true;
             this.pressedKeys = new Set();
             this.audioContext = new AudioContext();
             this.analyzer = this.audioContext.createAnalyser();
@@ -6390,19 +6428,19 @@
                     break;
             }
         }
-        onOsc1EnvelopeChange(event) {
+        onAmplitudeEnvelopeChange(event) {
             switch (event.detail.type) {
                 case OscillatorEnvelopeEvent.ATTACK:
-                    this.voiceManager.setOsc1EnvelopeAttack(event.detail.value);
+                    this.voiceManager.setAmplitudeEnvelopeAttack(event.detail.value);
                     break;
                 case OscillatorEnvelopeEvent.DECAY:
-                    this.voiceManager.setOsc1EnvelopeDecay(event.detail.value);
+                    this.voiceManager.setAmplitudeEnvelopeDecay(event.detail.value);
                     break;
                 case OscillatorEnvelopeEvent.SUSTAIN:
-                    this.voiceManager.setOsc1EnvelopeSustain(event.detail.value);
+                    this.voiceManager.setAmplitudeEnvelopeSustain(event.detail.value);
                     break;
                 case OscillatorEnvelopeEvent.RELEASE:
-                    this.voiceManager.setOsc1EnvelopeRelease(event.detail.value);
+                    this.voiceManager.setAmplitudeEnvelopeRelease(event.detail.value);
                     break;
             }
         }
@@ -6558,7 +6596,7 @@
               .currentLearnerID=${this.currentLearnerID}
               label="envelope"
               .state=${this.state.envelope}
-              @change=${this.onOsc1EnvelopeChange}
+              @change=${this.onAmplitudeEnvelopeChange}
             ></envelope-element>
             <lfo-element
               .currentLearnerID=${this.currentLearnerID}
