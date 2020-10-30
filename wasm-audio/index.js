@@ -5760,7 +5760,7 @@
     class VoiceManager extends Dispatcher {
         constructor(audioContext) {
             super();
-            this.state = createVoiceState({
+            this._state = createVoiceState({
                 osc1: {
                     mode: { value: OscillatorMode.SINE },
                     semiShift: { value: 127 - 127 / 4 },
@@ -5801,14 +5801,14 @@
                     destination: { value: LfoDestination.CUTOFF },
                 },
             });
-            this._state = createVoiceState({
+            this.state = createVoiceState({
                 osc1: {
                     mode: { value: OscillatorMode.SAWTOOTH },
                     semiShift: { value: 127 - 127 / 4 },
                     centShift: { value: 127 / 2 },
                 },
                 osc2: {
-                    mode: { value: OscillatorMode.SINE },
+                    mode: { value: OscillatorMode.SAWTOOTH },
                     semiShift: { value: 127 / 2 },
                     centShift: { value: 127 - 127 / 3 },
                 },
