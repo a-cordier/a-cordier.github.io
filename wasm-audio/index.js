@@ -3373,10 +3373,10 @@
 
     var OscillatorMode;
     (function (OscillatorMode) {
-        OscillatorMode["SINE"] = "sine";
-        OscillatorMode["SQUARE"] = "square";
-        OscillatorMode["SAWTOOTH"] = "sawtooth";
-        OscillatorMode["TRIANGLE"] = "triangle";
+        OscillatorMode[OscillatorMode["SINE"] = 0] = "SINE";
+        OscillatorMode[OscillatorMode["SAWTOOTH"] = 1] = "SAWTOOTH";
+        OscillatorMode[OscillatorMode["SQUARE"] = 2] = "SQUARE";
+        OscillatorMode[OscillatorMode["TRIANGLE"] = 3] = "TRIANGLE";
     })(OscillatorMode || (OscillatorMode = {}));
 
     let WaveSelector = class WaveSelector extends LitElement {
@@ -3863,10 +3863,10 @@
 
     var FilterMode;
     (function (FilterMode) {
-        FilterMode["LOWPASS_PLUS"] = "LOWPASS_PLUS";
-        FilterMode["LOWPASS"] = "LOWPASS";
-        FilterMode["BANDPASS"] = "BANDPASS";
-        FilterMode["HIGHPASS"] = "HIGHPASS";
+        FilterMode[FilterMode["LOWPASS"] = 0] = "LOWPASS";
+        FilterMode[FilterMode["LOWPASS_PLUS"] = 1] = "LOWPASS_PLUS";
+        FilterMode[FilterMode["BANDPASS"] = 2] = "BANDPASS";
+        FilterMode[FilterMode["HIGHPASS"] = 3] = "HIGHPASS";
     })(FilterMode || (FilterMode = {}));
 
     let FilterSelector = class FilterSelector extends LitElement {
@@ -5106,10 +5106,10 @@
 
     var LfoDestination;
     (function (LfoDestination) {
-        LfoDestination["FREQUENCY"] = "FREQUENCY";
-        LfoDestination["OSCILLATOR_MIX"] = "OSCILLATOR_MIX";
-        LfoDestination["CUTOFF"] = "CUTOFF";
-        LfoDestination["RESONANCE"] = "RESONANCE";
+        LfoDestination[LfoDestination["FREQUENCY"] = 0] = "FREQUENCY";
+        LfoDestination[LfoDestination["OSCILLATOR_MIX"] = 1] = "OSCILLATOR_MIX";
+        LfoDestination[LfoDestination["CUTOFF"] = 2] = "CUTOFF";
+        LfoDestination[LfoDestination["RESONANCE"] = 3] = "RESONANCE";
     })(LfoDestination || (LfoDestination = {}));
     const lfoDestinations = new SelectOptions([
         { value: LfoDestination.OSCILLATOR_MIX, name: "OSC MIX" },
@@ -5483,48 +5483,18 @@
         customElement("menu-element")
     ], Menu);
 
-    function createStartMessage(time) {
-        return {
-            type: "START",
-            time,
-        };
-    }
-    function createStopMessage(time) {
-        return {
-            type: "STOP",
-            time,
-        };
-    }
-    function createWaveformMessage(target, waveform) {
-        return {
-            type: "WAVEFORM",
-            waveform,
-            target,
-        };
-    }
-    function createFilterModeMessage(mode) {
-        return {
-            type: "FILTER_MODE",
-            mode,
-        };
-    }
-    function createLfoDestinationMessage(target, destination) {
-        return {
-            type: "LFO_DESTINATION",
-            destination,
-            target,
-        };
-    }
     class WasmVoiceNode extends AudioWorkletNode {
         constructor(audioContext) {
             super(audioContext, "voice");
             this.params = this.parameters;
         }
         start(time = this.context.currentTime) {
-            this.port.postMessage(createStartMessage(time));
+            this.params.get("startTime").value = time;
+            this.params.get("stopped").value = Number(false);
         }
         stop(time = this.context.currentTime) {
-            this.port.postMessage(createStopMessage(time));
+            this.params.get("stopTime").value = time;
+            this.params.get("stopped").value = Number(true);
         }
         get frequency() {
             return this.params.get("frequency");
@@ -5574,14 +5544,14 @@
         get osc2Amplitude() {
             return this.params.get("osc2Amplitude");
         }
-        set osc1(type) {
-            this.port.postMessage(createWaveformMessage("osc1", type));
+        get osc1() {
+            return this.params.get("osc1");
         }
-        set osc2(type) {
-            this.port.postMessage(createWaveformMessage("osc2", type));
+        get osc2() {
+            return this.params.get("osc2");
         }
-        set filterMode(mode) {
-            this.port.postMessage(createFilterModeMessage(mode));
+        get filterMode() {
+            return this.params.get("filterMode");
         }
         get lfo1Frequency() {
             return this.params.get("lfo1Frequency");
@@ -5589,11 +5559,11 @@
         get lfo1ModAmount() {
             return this.params.get("lfo1ModAmount");
         }
-        set lfo1Mode(mode) {
-            this.port.postMessage(createWaveformMessage("lfo1", mode));
+        get lfo1Mode() {
+            return this.params.get("lfo1Mode");
         }
-        set lfo1Destination(destination) {
-            this.port.postMessage(createLfoDestinationMessage("lfo1", destination));
+        get lfo1Destination() {
+            return this.params.get("lfo1Destination");
         }
         get lfo2Frequency() {
             return this.params.get("lfo2Frequency");
@@ -5601,11 +5571,11 @@
         get lfo2ModAmount() {
             return this.params.get("lfo2ModAmount");
         }
-        set lfo2Mode(mode) {
-            this.port.postMessage(createWaveformMessage("lfo2", mode));
+        get lfo2Mode() {
+            return this.params.get("lfo2Mode");
         }
-        set lfo2Destination(destination) {
-            this.port.postMessage(createLfoDestinationMessage("lfo2", destination));
+        get lfo2Destination() {
+            return this.params.get("lfo2Destination");
         }
     }
 
@@ -5760,7 +5730,7 @@
     class VoiceManager extends Dispatcher {
         constructor(audioContext) {
             super();
-            this._state = createVoiceState({
+            this.state = createVoiceState({
                 osc1: {
                     mode: { value: OscillatorMode.SINE },
                     semiShift: { value: 127 - 127 / 4 },
@@ -5801,14 +5771,14 @@
                     destination: { value: LfoDestination.CUTOFF },
                 },
             });
-            this.state = createVoiceState({
+            this._state = createVoiceState({
                 osc1: {
                     mode: { value: OscillatorMode.SAWTOOTH },
                     semiShift: { value: 127 - 127 / 4 },
                     centShift: { value: 127 / 2 },
                 },
                 osc2: {
-                    mode: { value: OscillatorMode.SAWTOOTH },
+                    mode: { value: OscillatorMode.SINE },
                     semiShift: { value: 127 / 2 },
                     centShift: { value: 127 - 127 / 3 },
                 },
@@ -5855,10 +5825,10 @@
             }
             const voice = this.voiceGenerator.next().value;
             voice.frequency.value = frequency;
-            voice.osc1 = this.state.osc1.mode.value;
+            voice.osc1.value = this.state.osc1.mode.value;
             voice.osc1SemiShift.value = this.state.osc1.semiShift.value;
             voice.osc1CentShift.value = this.state.osc1.centShift.value;
-            voice.osc2 = this.state.osc2.mode.value;
+            voice.osc2.value = this.state.osc2.mode.value;
             voice.osc2SemiShift.value = this.state.osc2.semiShift.value;
             voice.osc2CentShift.value = this.state.osc2.centShift.value;
             voice.osc2Amplitude.value = this.state.osc2Amplitude.value;
@@ -5866,7 +5836,7 @@
             voice.amplitudeDecay.value = this.state.envelope.decay.value;
             voice.amplitudeSustain.value = this.state.envelope.sustain.value;
             voice.amplitudeRelease.value = this.state.envelope.release.value;
-            voice.filterMode = this.state.filter.mode.value;
+            voice.filterMode.value = this.state.filter.mode.value;
             voice.cutoff.value = this.state.filter.cutoff.value;
             voice.resonance.value = this.state.filter.resonance.value;
             voice.cutoffAttack.value = this.state.cutoffMod.attack.value;
@@ -5874,23 +5844,22 @@
             voice.cutoffEnvelopeAmount.value = this.state.cutoffMod.amount.value;
             voice.lfo1Frequency.value = this.state.lfo1.frequency.value;
             voice.lfo1ModAmount.value = this.state.lfo1.modAmount.value;
-            voice.lfo1Mode = this.state.lfo1.mode.value;
-            voice.lfo1Destination = this.state.lfo1.destination.value;
+            voice.lfo1Mode.value = this.state.lfo1.mode.value;
+            voice.lfo1Destination.value = this.state.lfo1.destination.value;
             voice.lfo2Frequency.value = this.state.lfo2.frequency.value;
             voice.lfo2ModAmount.value = this.state.lfo2.modAmount.value;
-            voice.lfo2Mode = this.state.lfo2.mode.value;
-            voice.lfo2Destination = this.state.lfo2.destination.value;
+            voice.lfo2Mode.value = this.state.lfo2.mode.value;
+            voice.lfo2Destination.value = this.state.lfo2.destination.value;
             this.voices.set(midiValue, voice);
-            voice.connect(this.output);
             voice.start();
+            voice.connect(this.output);
             return voice;
         }
         setMidiController(midiController) {
-            midiController
+            this.midiController = midiController
                 .subscribe(MidiMessageEvent.NOTE_ON, this.onMidiNoteOn)
                 .subscribe(MidiMessageEvent.NOTE_OFF, this.onMidiNoteOff)
                 .subscribe(MidiMessageEvent.CONTROL_CHANGE, this.onMidiCC);
-            this.midiController = midiController;
             return this;
         }
         setKeyBoardcontroller(keyBoardController) {
@@ -5974,7 +5943,7 @@
         }
         setOsc1Mode(newMode) {
             this.state.osc1.mode.value = newMode;
-            this.dispatchUpdate((voice) => (voice.osc1 = newMode));
+            this.dispatchUpdate((voice) => (voice.osc1.value = newMode));
             return this;
         }
         setOsc1SemiShift(newSemiShift) {
@@ -5992,7 +5961,7 @@
         }
         setOsc2Mode(newMode) {
             this.state.osc2.mode.value = newMode;
-            this.dispatchUpdate((voice) => (voice.osc2 = newMode));
+            this.dispatchUpdate((voice) => (voice.osc2.value = newMode));
             return this;
         }
         setOsc2SemiShift(newSemiShift) {
@@ -6037,7 +6006,7 @@
         }
         setFilterMode(newMode) {
             this.state.filter.mode.value = newMode;
-            this.dispatchUpdate((voice) => (voice.filterMode = newMode));
+            this.dispatchUpdate((voice) => (voice.filterMode.value = newMode));
             return this;
         }
         setFilterCutoff(newCutoff) {
@@ -6067,7 +6036,7 @@
         }
         setLfo1Mode(newMode) {
             this.state.lfo1.mode.value = newMode;
-            this.dispatchUpdate((voice) => (voice.lfo1Mode = newMode));
+            this.dispatchUpdate((voice) => (voice.lfo1Mode.value = newMode));
             return this;
         }
         get lfo1() {
@@ -6075,7 +6044,7 @@
         }
         setLfo1Destination(newDestination) {
             this.state.lfo1.destination.value = newDestination;
-            this.dispatchUpdate((voice) => (voice.lfo1Destination = newDestination));
+            this.dispatchUpdate((voice) => (voice.lfo1Destination.value = newDestination));
             return this;
         }
         setLfo1Frequency(newFrequency) {
@@ -6093,12 +6062,12 @@
         }
         setLfo2Mode(newMode) {
             this.state.lfo2.mode.value = newMode;
-            this.dispatchUpdate((voice) => (voice.lfo2Mode = newMode));
+            this.dispatchUpdate((voice) => (voice.lfo2Mode.value = newMode));
             return this;
         }
         setLfo2Destination(newDestination) {
             this.state.lfo2.destination.value = newDestination;
-            this.dispatchUpdate((voice) => (voice.lfo2Destination = newDestination));
+            this.dispatchUpdate((voice) => (voice.lfo2Destination.value = newDestination));
             return this;
         }
         setLfo2Frequency(newFrequency) {
@@ -6231,6 +6200,9 @@
             };
         }
         function dispatchMessageIfNeeded(message) {
+            if (!message) {
+                return;
+            }
             const messageChannel = message.data.channel;
             if (messageChannel !== currentChannel &&
                 currentChannel !== MidiOmniChannel) {
@@ -6338,7 +6310,7 @@
         constructor() {
             super();
             this.currentLearnerID = MidiControlID.NONE;
-            this.showVizualizer = true;
+            this.showVizualizer = false;
             this.pressedKeys = new Set();
             this.audioContext = new AudioContext();
             this.analyzer = this.audioContext.createAnalyser();
