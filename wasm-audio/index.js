@@ -3029,6 +3029,296 @@
         customElement("visualizer-element")
     ], Visualizer);
 
+    var OscillatorMode;
+    (function (OscillatorMode) {
+        OscillatorMode[OscillatorMode["SINE"] = 0] = "SINE";
+        OscillatorMode[OscillatorMode["SAWTOOTH"] = 1] = "SAWTOOTH";
+        OscillatorMode[OscillatorMode["SQUARE"] = 2] = "SQUARE";
+        OscillatorMode[OscillatorMode["TRIANGLE"] = 3] = "TRIANGLE";
+    })(OscillatorMode || (OscillatorMode = {}));
+
+    let SineWaveIcon = class SineWaveIcon extends LitElement {
+        render() {
+            return html `
+      <div class="wrapper">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewbox="0 0 15 15"
+        >
+          <path
+            d="M1,7.5L1.9285714285714286,10.392772141432088L2.857142857142857,
+                    12.71259528273145L3.7857142857142856,14L4.714285714285714,14L5.642857142857142,
+                    12.71259528273145L6.571428571428571,10.392772141432088L7.5,7.500000000000002L8.428571428571429,
+                    4.607227858567914L9.357142857142858,2.287404717268552L10.285714285714286,1L11.214285714285714,
+                    1L12.142857142857142,2.2874047172685508L13.071428571428571,4.607227858567911L14,7.499999999999998"
+            stroke-width="2"
+            stroke-linecap="flat"
+            fill-opacity="0"
+          ></path>
+        </svg>
+      </div>
+    `;
+        }
+        static get styles() {
+            return css `
+      svg {
+        width: 12px;
+        stroke: var(--stroke-color, #000);
+      }
+    `;
+        }
+    };
+    SineWaveIcon = __decorate([
+        customElement("sine-wave-icon")
+    ], SineWaveIcon);
+
+    let SquareWaveIcon = class SquareWaveIcon extends LitElement {
+        render() {
+            return html `
+      <div class="wrapper">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewbox="0 0 15 15"
+        >
+          <path
+            d="M1,7.500000000000015L1.9285714285714286,13.998703251446551L2.857142857142857,
+                    13.999999999999995L3.7857142857142856,13.996380456469218L4.714285714285714,
+                    13.996380456469204L5.642857142857142,14L6.571428571428571,13.998703251446567L7.5,
+                    7.500000000001059L8.428571428571429,1.0012967485535302L9.357142857142858,
+                    1.000000000000089L10.285714285714286,1.003619543530807L11.214285714285714,
+                    1.003619543530832L12.142857142857142,1L13.071428571428571,1.0012967485534585L14,
+                    7.499999999997926"
+            stroke-width="2"
+            stroke-linecap="flat"
+            fill-opacity="0"
+          ></path>
+        </svg>
+      </div>
+    `;
+        }
+        static get styles() {
+            return css `
+      svg {
+        width: 12px;
+        stroke: var(--stroke-color, #000);
+      }
+    `;
+        }
+    };
+    SquareWaveIcon = __decorate([
+        customElement("square-wave-icon")
+    ], SquareWaveIcon);
+
+    let SawWaveIcon = class SawWaveIcon extends LitElement {
+        render() {
+            return html `
+      <div class="wrapper">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewbox="0 0 15 15"
+        >
+          <path
+            d="M1,7.499999999999998L1.9285714285714286,9.66666501861054L2.857142857142857,
+                    11.833332134083884L3.7857142857142856,13.999999999999993L4.714285714285714,
+                    14L5.642857142857142,11.833332134083886L6.571428571428571,9.666665018610539L7.5,
+                    7.499999999999998L8.428571428571429,5.333334981389459L9.357142857142858,
+                    3.1666678659161125L10.285714285714286,1.0000000000000013L11.214285714285714,
+                    1L12.142857142857142,3.1666678659161125L13.071428571428571,5.333334981389459L14,
+                    7.499999999999998"
+            stroke-width="2"
+            stroke-linecap="flat"
+            fill="#000000"
+            fill-opacity="0"
+          ></path>
+        </svg>
+      </div>
+    `;
+        }
+        static get styles() {
+            return css `
+      svg {
+        width: 12px;
+        stroke: var(--stroke-color, #000);
+      }
+    `;
+        }
+    };
+    SawWaveIcon = __decorate([
+        customElement("saw-wave-icon")
+    ], SawWaveIcon);
+
+    let TriangleWaveIcon = class TriangleWaveIcon extends LitElement {
+        render() {
+            return html `
+      <div class="wrapper">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewbox="0 0 15 15"
+        >
+          <path
+            d="M1,14L1.9285714285714286,12.142490562426055L2.857142857142857,
+                    10.284980468772217L3.7857142857142856,8.427469360191056L4.714285714285714,
+                    6.5699573422095705L5.642857142857142,4.712444949042433L6.571428571428571,
+                    2.8549329289184655L7.5,1L8.428571428571429,2.854932928918461L9.357142857142858,
+                    4.712444949042433L10.285714285714286,6.569957342209566L11.214285714285714,
+                    8.427469360191049L12.142857142857142,10.284980468772217L13.071428571428571,
+                    12.142490562426048L14,13.999999999999995"
+            stroke-width="2"
+            stroke-linecap="flat"
+            fill-opacity="0"
+          ></path>
+        </svg>
+      </div>
+    `;
+        }
+        static get styles() {
+            return css `
+      svg {
+        width: 12px;
+        stroke: var(--stroke-color, #000);
+        margin-left: 1px;
+      }
+    `;
+        }
+    };
+    TriangleWaveIcon = __decorate([
+        customElement("triangle-wave-icon")
+    ], TriangleWaveIcon);
+
+    let WaveSelector = class WaveSelector extends LitElement {
+        constructor() {
+            super(...arguments);
+            this.value = OscillatorMode.SINE;
+        }
+        async onSawSelect() {
+            this.value = OscillatorMode.SAWTOOTH;
+            this.dispatchSelect();
+        }
+        async onSquareSelect() {
+            this.value = OscillatorMode.SQUARE;
+            this.dispatchSelect();
+        }
+        async onSineSelect() {
+            this.value = OscillatorMode.SINE;
+            this.dispatchSelect();
+        }
+        async onTriangleSelect() {
+            this.value = OscillatorMode.TRIANGLE;
+            this.dispatchSelect();
+        }
+        dispatchSelect() {
+            this.dispatchEvent(new CustomEvent("change", { detail: { value: this.value } }));
+        }
+        render() {
+            return html `
+      <div class="wave-selector">
+        <button
+          class="${this.computeButtonClasses(OscillatorMode.SAWTOOTH)}"
+          @click=${this.onSawSelect}
+        >
+          <saw-wave-icon class="icon"></saw-wave-icon>
+        </button>
+        <button
+          class="${this.computeButtonClasses(OscillatorMode.SQUARE)}"
+          @click=${this.onSquareSelect}
+        >
+          <square-wave-icon class="icon"></square-wave-icon>
+        </button>
+        <button
+          class="${this.computeButtonClasses(OscillatorMode.TRIANGLE)}"
+          @click=${this.onTriangleSelect}
+        >
+          <triangle-wave-icon class="icon"></triangle-wave-icon>
+        </button>
+        <button
+          class="${this.computeButtonClasses(OscillatorMode.SINE)}"
+          @click=${this.onSineSelect}
+        >
+          <sine-wave-icon class="icon"></sine-wave-icon>
+        </button>
+      </div>
+    `;
+        }
+        computeButtonClasses(wave) {
+            return classMap({
+                active: wave === this.value,
+            });
+        }
+        static get styles() {
+            // noinspection CssUnresolvedCustomProperty
+            return css `
+      :host {
+        width: 100%;
+      }
+
+      .wave-selector {
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        width: 100%;
+      }
+
+      button {
+        width: var(--button-width, 25px);
+        height: var(--button-height, 25px);
+        font-size: var(--button-font-size, 1.5em);
+
+        background-color: var(--button-disposed-background-color);
+        border: 1px solid #ccc;
+        border-radius: 50%;
+        box-shadow: var(--box-shadow);
+        transition: all 0.1s ease-in-out;
+
+        display: inline-flex;
+        align-items: center;
+
+        cursor: pointer;
+
+        --stroke-color: var(--button-disposed-label-color);
+      }
+
+      button .icon {
+        margin-top: -2px;
+      }
+
+      button:focus {
+        outline: none;
+      }
+
+      button.active {
+        background-color:  var(--button-active-background-color);
+        --stroke-color: var(--button-active-label-color);
+        border-color: white;
+      }
+    `;
+        }
+    };
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], WaveSelector.prototype, "value", void 0);
+    WaveSelector = __decorate([
+        customElement("wave-selector-element")
+    ], WaveSelector);
+
+    var OscillatorEvent;
+    (function (OscillatorEvent) {
+        OscillatorEvent[OscillatorEvent["WAVE_FORM"] = 0] = "WAVE_FORM";
+        OscillatorEvent[OscillatorEvent["SEMI_SHIFT"] = 1] = "SEMI_SHIFT";
+        OscillatorEvent[OscillatorEvent["CENT_SHIFT"] = 2] = "CENT_SHIFT";
+        OscillatorEvent[OscillatorEvent["CYCLE"] = 3] = "CYCLE";
+        OscillatorEvent[OscillatorEvent["MIX"] = 4] = "MIX";
+        OscillatorEvent[OscillatorEvent["NOISE"] = 5] = "NOISE";
+    })(OscillatorEvent || (OscillatorEvent = {}));
+
     function clamp(range, value) {
         if (value >= range.max)
             return range.max;
@@ -3183,7 +3473,7 @@
       }
 
       .label {
-        font-size: 0.8em;
+        font-size: var(--control-label-font-size);
         color: var(--control-label-color);
         display: flex;
         justify-content: center;
@@ -3214,293 +3504,6 @@
     Knob = __decorate([
         customElement("knob-element")
     ], Knob);
-
-    let SawWaveIcon = class SawWaveIcon extends LitElement {
-        render() {
-            return html `
-      <div class="wrapper">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="15"
-          height="15"
-          viewbox="0 0 15 15"
-        >
-          <path
-            d="M1,7.499999999999998L1.9285714285714286,9.66666501861054L2.857142857142857,
-                    11.833332134083884L3.7857142857142856,13.999999999999993L4.714285714285714,
-                    14L5.642857142857142,11.833332134083886L6.571428571428571,9.666665018610539L7.5,
-                    7.499999999999998L8.428571428571429,5.333334981389459L9.357142857142858,
-                    3.1666678659161125L10.285714285714286,1.0000000000000013L11.214285714285714,
-                    1L12.142857142857142,3.1666678659161125L13.071428571428571,5.333334981389459L14,
-                    7.499999999999998"
-            stroke-width="2"
-            stroke-linecap="flat"
-            fill="#000000"
-            fill-opacity="0"
-          ></path>
-        </svg>
-      </div>
-    `;
-        }
-        static get styles() {
-            return css `
-      svg {
-        width: 12px;
-        stroke: var(--stroke-color, #000);
-      }
-    `;
-        }
-    };
-    SawWaveIcon = __decorate([
-        customElement("saw-wave-icon")
-    ], SawWaveIcon);
-
-    let SquareWaveIcon = class SquareWaveIcon extends LitElement {
-        render() {
-            return html `
-      <div class="wrapper">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="15"
-          height="15"
-          viewbox="0 0 15 15"
-        >
-          <path
-            d="M1,7.500000000000015L1.9285714285714286,13.998703251446551L2.857142857142857,
-                    13.999999999999995L3.7857142857142856,13.996380456469218L4.714285714285714,
-                    13.996380456469204L5.642857142857142,14L6.571428571428571,13.998703251446567L7.5,
-                    7.500000000001059L8.428571428571429,1.0012967485535302L9.357142857142858,
-                    1.000000000000089L10.285714285714286,1.003619543530807L11.214285714285714,
-                    1.003619543530832L12.142857142857142,1L13.071428571428571,1.0012967485534585L14,
-                    7.499999999997926"
-            stroke-width="2"
-            stroke-linecap="flat"
-            fill-opacity="0"
-          ></path>
-        </svg>
-      </div>
-    `;
-        }
-        static get styles() {
-            return css `
-      svg {
-        width: 12px;
-        stroke: var(--stroke-color, #000);
-      }
-    `;
-        }
-    };
-    SquareWaveIcon = __decorate([
-        customElement("square-wave-icon")
-    ], SquareWaveIcon);
-
-    let SineWaveIcon = class SineWaveIcon extends LitElement {
-        render() {
-            return html `
-      <div class="wrapper">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="15"
-          height="15"
-          viewbox="0 0 15 15"
-        >
-          <path
-            d="M1,7.5L1.9285714285714286,10.392772141432088L2.857142857142857,
-                    12.71259528273145L3.7857142857142856,14L4.714285714285714,14L5.642857142857142,
-                    12.71259528273145L6.571428571428571,10.392772141432088L7.5,7.500000000000002L8.428571428571429,
-                    4.607227858567914L9.357142857142858,2.287404717268552L10.285714285714286,1L11.214285714285714,
-                    1L12.142857142857142,2.2874047172685508L13.071428571428571,4.607227858567911L14,7.499999999999998"
-            stroke-width="2"
-            stroke-linecap="flat"
-            fill-opacity="0"
-          ></path>
-        </svg>
-      </div>
-    `;
-        }
-        static get styles() {
-            return css `
-      svg {
-        width: 12px;
-        stroke: var(--stroke-color, #000);
-      }
-    `;
-        }
-    };
-    SineWaveIcon = __decorate([
-        customElement("sine-wave-icon")
-    ], SineWaveIcon);
-
-    let TriangleWaveIcon = class TriangleWaveIcon extends LitElement {
-        render() {
-            return html `
-      <div class="wrapper">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="15"
-          height="15"
-          viewbox="0 0 15 15"
-        >
-          <path
-            d="M1,14L1.9285714285714286,12.142490562426055L2.857142857142857,
-                    10.284980468772217L3.7857142857142856,8.427469360191056L4.714285714285714,
-                    6.5699573422095705L5.642857142857142,4.712444949042433L6.571428571428571,
-                    2.8549329289184655L7.5,1L8.428571428571429,2.854932928918461L9.357142857142858,
-                    4.712444949042433L10.285714285714286,6.569957342209566L11.214285714285714,
-                    8.427469360191049L12.142857142857142,10.284980468772217L13.071428571428571,
-                    12.142490562426048L14,13.999999999999995"
-            stroke-width="2"
-            stroke-linecap="flat"
-            fill-opacity="0"
-          ></path>
-        </svg>
-      </div>
-    `;
-        }
-        static get styles() {
-            return css `
-      svg {
-        width: 12px;
-        stroke: var(--stroke-color, #000);
-        margin-left: 1px;
-      }
-    `;
-        }
-    };
-    TriangleWaveIcon = __decorate([
-        customElement("triangle-wave-icon")
-    ], TriangleWaveIcon);
-
-    var OscillatorMode;
-    (function (OscillatorMode) {
-        OscillatorMode[OscillatorMode["SINE"] = 0] = "SINE";
-        OscillatorMode[OscillatorMode["SAWTOOTH"] = 1] = "SAWTOOTH";
-        OscillatorMode[OscillatorMode["SQUARE"] = 2] = "SQUARE";
-        OscillatorMode[OscillatorMode["TRIANGLE"] = 3] = "TRIANGLE";
-    })(OscillatorMode || (OscillatorMode = {}));
-
-    let WaveSelector = class WaveSelector extends LitElement {
-        constructor() {
-            super(...arguments);
-            this.value = OscillatorMode.SINE;
-        }
-        async onSawSelect() {
-            this.value = OscillatorMode.SAWTOOTH;
-            this.dispatchSelect();
-        }
-        async onSquareSelect() {
-            this.value = OscillatorMode.SQUARE;
-            this.dispatchSelect();
-        }
-        async onSineSelect() {
-            this.value = OscillatorMode.SINE;
-            this.dispatchSelect();
-        }
-        async onTriangleSelect() {
-            this.value = OscillatorMode.TRIANGLE;
-            this.dispatchSelect();
-        }
-        dispatchSelect() {
-            this.dispatchEvent(new CustomEvent("change", { detail: { value: this.value } }));
-        }
-        render() {
-            return html `
-      <div class="wave-selector">
-        <button
-          class="${this.computeButtonClasses(OscillatorMode.SAWTOOTH)}"
-          @click=${this.onSawSelect}
-        >
-          <saw-wave-icon class="icon"></saw-wave-icon>
-        </button>
-        <button
-          class="${this.computeButtonClasses(OscillatorMode.SQUARE)}"
-          @click=${this.onSquareSelect}
-        >
-          <square-wave-icon class="icon"></square-wave-icon>
-        </button>
-        <button
-          class="${this.computeButtonClasses(OscillatorMode.TRIANGLE)}"
-          @click=${this.onTriangleSelect}
-        >
-          <triangle-wave-icon class="icon"></triangle-wave-icon>
-        </button>
-        <button
-          class="${this.computeButtonClasses(OscillatorMode.SINE)}"
-          @click=${this.onSineSelect}
-        >
-          <sine-wave-icon class="icon"></sine-wave-icon>
-        </button>
-      </div>
-    `;
-        }
-        computeButtonClasses(wave) {
-            return classMap({
-                active: wave === this.value,
-            });
-        }
-        static get styles() {
-            // noinspection CssUnresolvedCustomProperty
-            return css `
-      :host {
-        width: 100%;
-      }
-
-      .wave-selector {
-        display: flex;
-        align-items: center;
-        justify-content: space-evenly;
-        width: 100%;
-      }
-
-      button {
-        width: var(--button-width, 25px);
-        height: var(--button-height, 25px);
-        font-size: var(--button-font-size, 1.5em);
-
-        background-color: var(--lighter-color);
-        border: 1px solid #ccc;
-        border-radius: 50%;
-        box-shadow: 0px 1px 1px 1px 1 #ccc;
-        transition: all 0.1s ease-in-out;
-
-        display: inline-flex;
-        align-items: center;
-
-        cursor: pointer;
-
-        --stroke-color: black;
-      }
-
-      button .icon {
-        margin-top: -2px;
-      }
-
-      button:focus {
-        outline: none;
-      }
-
-      button.active {
-        background-color: var(--control-handle-color);
-        --stroke-color: white;
-        border-color: white;
-      }
-    `;
-        }
-    };
-    __decorate([
-        property({ type: String }),
-        __metadata("design:type", Object)
-    ], WaveSelector.prototype, "value", void 0);
-    WaveSelector = __decorate([
-        customElement("wave-selector-element")
-    ], WaveSelector);
-
-    var OscillatorEvent;
-    (function (OscillatorEvent) {
-        OscillatorEvent[OscillatorEvent["WAVE_FORM"] = 0] = "WAVE_FORM";
-        OscillatorEvent[OscillatorEvent["SEMI_SHIFT"] = 1] = "SEMI_SHIFT";
-        OscillatorEvent[OscillatorEvent["CENT_SHIFT"] = 2] = "CENT_SHIFT";
-    })(OscillatorEvent || (OscillatorEvent = {}));
 
     let PanelWrapper = class PanelWrapper extends LitElement {
         constructor() {
@@ -3542,9 +3545,8 @@
       label {
         display: block;
         color: var(--panel-wrapper-label-color, white);
-        margin: 0.25em auto 1em auto;
+        margin: 0 auto 0.5em auto;
         text-align: center;
-        text-transform: uppercase;
       }
     `;
         }
@@ -3605,22 +3607,25 @@
         MidiControlID[MidiControlID["NONE"] = -1] = "NONE";
         MidiControlID[MidiControlID["OSC1_SEMI"] = 0] = "OSC1_SEMI";
         MidiControlID[MidiControlID["OSC1_CENT"] = 1] = "OSC1_CENT";
-        MidiControlID[MidiControlID["OSC_MIX"] = 2] = "OSC_MIX";
-        MidiControlID[MidiControlID["OSC2_SEMI"] = 3] = "OSC2_SEMI";
-        MidiControlID[MidiControlID["OSC2_CENT"] = 4] = "OSC2_CENT";
-        MidiControlID[MidiControlID["CUTOFF"] = 5] = "CUTOFF";
-        MidiControlID[MidiControlID["RESONANCE"] = 6] = "RESONANCE";
-        MidiControlID[MidiControlID["ATTACK"] = 7] = "ATTACK";
-        MidiControlID[MidiControlID["DECAY"] = 8] = "DECAY";
-        MidiControlID[MidiControlID["SUSTAIN"] = 9] = "SUSTAIN";
-        MidiControlID[MidiControlID["RELEASE"] = 10] = "RELEASE";
-        MidiControlID[MidiControlID["LFO1_FREQ"] = 11] = "LFO1_FREQ";
-        MidiControlID[MidiControlID["LFO1_MOD"] = 12] = "LFO1_MOD";
-        MidiControlID[MidiControlID["LFO2_FREQ"] = 13] = "LFO2_FREQ";
-        MidiControlID[MidiControlID["LFO2_MOD"] = 14] = "LFO2_MOD";
-        MidiControlID[MidiControlID["CUT_MOD"] = 15] = "CUT_MOD";
-        MidiControlID[MidiControlID["CUT_ATTACK"] = 16] = "CUT_ATTACK";
-        MidiControlID[MidiControlID["CUT_DECAY"] = 17] = "CUT_DECAY";
+        MidiControlID[MidiControlID["OSC1_CYCLE"] = 2] = "OSC1_CYCLE";
+        MidiControlID[MidiControlID["OSC_MIX"] = 3] = "OSC_MIX";
+        MidiControlID[MidiControlID["OSC2_SEMI"] = 4] = "OSC2_SEMI";
+        MidiControlID[MidiControlID["OSC2_CENT"] = 5] = "OSC2_CENT";
+        MidiControlID[MidiControlID["OSC2_CYCLE"] = 6] = "OSC2_CYCLE";
+        MidiControlID[MidiControlID["NOISE_LEVEL"] = 7] = "NOISE_LEVEL";
+        MidiControlID[MidiControlID["CUTOFF"] = 8] = "CUTOFF";
+        MidiControlID[MidiControlID["RESONANCE"] = 9] = "RESONANCE";
+        MidiControlID[MidiControlID["ATTACK"] = 10] = "ATTACK";
+        MidiControlID[MidiControlID["DECAY"] = 11] = "DECAY";
+        MidiControlID[MidiControlID["SUSTAIN"] = 12] = "SUSTAIN";
+        MidiControlID[MidiControlID["RELEASE"] = 13] = "RELEASE";
+        MidiControlID[MidiControlID["LFO1_FREQ"] = 14] = "LFO1_FREQ";
+        MidiControlID[MidiControlID["LFO1_MOD"] = 15] = "LFO1_MOD";
+        MidiControlID[MidiControlID["LFO2_FREQ"] = 16] = "LFO2_FREQ";
+        MidiControlID[MidiControlID["LFO2_MOD"] = 17] = "LFO2_MOD";
+        MidiControlID[MidiControlID["CUT_MOD"] = 18] = "CUT_MOD";
+        MidiControlID[MidiControlID["CUT_ATTACK"] = 19] = "CUT_ATTACK";
+        MidiControlID[MidiControlID["CUT_DECAY"] = 20] = "CUT_DECAY";
     })(MidiControlID || (MidiControlID = {}));
     function toSelectOption(option) {
         return {
@@ -3631,9 +3636,11 @@
     const MidiLearnOptions = new SelectOptions([
         toSelectOption(MidiControlID.OSC1_SEMI),
         toSelectOption(MidiControlID.OSC1_CENT),
+        toSelectOption(MidiControlID.OSC1_CYCLE),
         toSelectOption(MidiControlID.OSC_MIX),
         toSelectOption(MidiControlID.OSC2_SEMI),
         toSelectOption(MidiControlID.OSC2_CENT),
+        toSelectOption(MidiControlID.OSC2_CYCLE),
         toSelectOption(MidiControlID.ATTACK),
         toSelectOption(MidiControlID.DECAY),
         toSelectOption(MidiControlID.SUSTAIN),
@@ -3656,6 +3663,8 @@
             this.currentLearnerID = MidiControlID.NONE;
             this.semiControlID = MidiControlID.OSC1_SEMI;
             this.centControlID = MidiControlID.OSC1_CENT;
+            this.cycleControlID = MidiControlID.OSC1_CYCLE;
+            this.cycleRange = { min: 5, max: 122 };
         }
         connectedCallback() {
             super.connectedCallback();
@@ -3671,6 +3680,12 @@
         }
         get centShiftValue() {
             return this.state.centShift.value;
+        }
+        onCycleChange(event) {
+            this.dispatchChange(OscillatorEvent.CYCLE, event.detail.value);
+        }
+        get cycleValue() {
+            return this.state.cycle.value;
         }
         onWaveFormChange(event) {
             this.dispatchChange(OscillatorEvent.WAVE_FORM, event.detail.value);
@@ -3717,6 +3732,21 @@
               </div>
               <label>cents</label>
             </div>
+            <div class="shift-control">
+              <div class="cycle-shift-control cycle">
+                <midi-control-wrapper
+                  controlID=${this.cycleControlID}
+                  currentLearnerID=${this.currentLearnerID}
+                >
+                  <knob-element
+                    .range=${this.cycleRange}
+                    .value=${this.cycleValue}
+                    @change=${this.onCycleChange}
+                  ></knob-element>
+                </midi-control-wrapper>
+              </div>
+              <label>cycle</label>
+            </div>
           </div>
         </div>
       </panel-wrapper-element>
@@ -3726,14 +3756,14 @@
             // noinspection CssUnresolvedCustomProperty
             return css `
       :host {
-        --panel-wrapper-background-color: #7a1621;
+        --panel-wrapper-background-color: var(--oscillator-panel-color);
       }
 
       .oscillator-controls {
         position: relative;
 
         width: 160px;
-        height: 130px;
+        height: 120px;
       }
 
       .oscillator-controls .tone-controls {
@@ -3771,10 +3801,20 @@
         --knob-size: 40px;
       }
 
+      .oscillator-controls .tone-controls .cycle-shift-control {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 100%;
+        height: 90%;
+        --knob-size: 35px;
+      }
+
       label {
         display: block;
         color: var(--control-label-color);
-        font-size: 0.8em;
+        font-size: var(--control-label-font-size);
       }
     `;
         }
@@ -3799,10 +3839,101 @@
         property({ type: Number }),
         __metadata("design:type", Object)
     ], Oscillator.prototype, "centControlID", void 0);
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], Oscillator.prototype, "cycleControlID", void 0);
     Oscillator = __decorate([
         customElement("oscillator-element"),
         __metadata("design:paramtypes", [])
     ], Oscillator);
+
+    let OscillatorMix = class OscillatorMix extends LitElement {
+        constructor() {
+            super(...arguments);
+            this.currentLearnerID = MidiControlID.NONE;
+        }
+        render() {
+            return html `
+        <panel-wrapper-element class="oscillator-mix">
+            <div class="oscillator-mix-control">
+                <midi-control-wrapper
+                .controlID=${MidiControlID.OSC_MIX}
+                .currentLearnerID=${this.currentLearnerID}
+                >
+                <knob-element
+                    class="mix"
+                    label="mix"
+                    .value=${this.state.osc2Amplitude.value}
+                    @change=${this.onMixChange}
+                ></knob-element>
+                </midi-control-wrapper>
+                <midi-control-wrapper
+                .controlID=${MidiControlID.NOISE_LEVEL}
+                .currentLearnerID=${this.currentLearnerID}
+                >
+                <knob-element
+                    class="noise"
+                    label="noise"
+                    .value=${this.state.noiseLevel.value}
+                    @change=${this.onNoiseChange}
+                ></knob-element>
+                </midi-control-wrapper>
+            </div>
+            <div class="noise-control">
+                
+            </div>
+        </panel-wrapper-element>
+    `;
+        }
+        onMixChange(event) {
+            this.dispatchChange(OscillatorEvent.MIX, event.detail.value);
+        }
+        onNoiseChange(event) {
+            this.dispatchChange(OscillatorEvent.NOISE, event.detail.value);
+        }
+        dispatchChange(type, value) {
+            this.dispatchEvent(new CustomEvent("change", { detail: { type, value } }));
+        }
+        static get styles() {
+            // noinspection CssUnresolvedCustomProperty
+            return css `
+      .oscillator-mix {
+        --panel-wrapper-background-color: var(--oscillator-mix-panel-color);
+
+      }
+
+      .oscillator-mix-control {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-evenly;
+
+        width: 60px; 
+        height: 130px;
+      }
+
+      .oscillator-mix .mix {
+        --knob-size: 40px;
+      }
+
+      .oscillator-mix .noise {
+        --knob-size: 30px;
+      }     
+    `;
+        }
+    };
+    __decorate([
+        property({ type: Number }),
+        __metadata("design:type", Object)
+    ], OscillatorMix.prototype, "currentLearnerID", void 0);
+    __decorate([
+        property({ type: Object }),
+        __metadata("design:type", Object)
+    ], OscillatorMix.prototype, "state", void 0);
+    OscillatorMix = __decorate([
+        customElement("oscillator-mix-element")
+    ], OscillatorMix);
 
     var FilterEvent;
     (function (FilterEvent) {
@@ -3949,10 +4080,10 @@
 
         font-size: var(--button-font-size, 1.5em);
 
-        background-color: var(--lighter-color);
+        background-color: var(--button-disposed-background-color);
         border: 1px solid var(--light-color, #ccc);
         border-radius: 50%;
-        box-shadow: 0px 1px 1px 1px var(--control-background-color, #ccc);
+        box-shadow: var(--box-shadow);
         transition: all 0.1s ease-in-out;
 
         display: inline-flex;
@@ -3960,7 +4091,7 @@
 
         cursor: pointer;
 
-        color: black;
+        color: var(--button-disposed-label-color);
       }
 
       button:focus {
@@ -3968,15 +4099,16 @@
       }
 
       button.active {
-        background-color: var(--control-handle-color);
+        background-color: var(--button-active-background-color);
         color: white;
-        border-color: white;
+        border-color: var(--button-active-label-color);
+        color: var(--button-active-label-color);
       }
     `;
         }
     };
     __decorate([
-        property({ type: String }),
+        property({ type: Number }),
         __metadata("design:type", Object)
     ], FilterSelector.prototype, "value", void 0);
     FilterSelector = __decorate([
@@ -4048,12 +4180,12 @@
             // noinspection CssUnresolvedCustomProperty
             return css `
       :host {
-        --panel-wrapper-background-color: #334452;
+        --panel-wrapper-background-color: var(--filter-panel-color);
       }
 
       .filter-controls {
-        width: 160px;
-        height: 130px;
+        width: 150px;
+        height: 120px;
       }
 
       .filter-controls .mode-control {
@@ -4084,6 +4216,10 @@
         display: flex;
         flex-direction: row;
         align-items: center;
+      }
+
+      .frequency-controls .resonance-control {
+        --knob-size: 50px;
       }
 
       label {
@@ -4261,8 +4397,8 @@
       .fader-wrapper {
         width: var(--fader-width, 20px);
         height: var(--fader-height, 100px);
-        border: 1px solid var(--lighter-color, white);
-        border-radius: 2px;
+        border: 2px solid var(--lighter-color, white);
+        border-radius: 4px;
         padding: 1px;
       }
 
@@ -4382,7 +4518,7 @@
             // noinspection CssUnresolvedCustomProperty
             return css `
       :host {
-        --panel-wrapper-background-color: #7a1621;
+        --panel-wrapper-background-color: var(--envelope-panel-color);
         --fader-height: 120px;
       }
 
@@ -4483,7 +4619,7 @@
             // noinspection CssUnresolvedCustomProperty
             return css `
       :host {
-        --panel-wrapper-background-color: #334452;
+        --panel-wrapper-background-color: var(--filter-mod-panel-color);
         --fader-height: 120px;
         --knob-size: 50px;
       }
@@ -4975,6 +5111,7 @@
         border: 1px solid gray;
 
         background-color: var(--lcd-screen-background, darkslategray);
+        border-color: var(--lcd-screen-border-color);
 
         padding: 5px;
       }
@@ -5063,9 +5200,9 @@
       button {
         font-size: var(--button-font-size, 0.5em);
 
-        background-color: var(--lighter-color);
-        border: 1px solid var(--light-color, #ccc);
-        box-shadow: 0px 1px 1px 1px var(--control-background-color, #ccc);
+        background-color: var(--button-disposed-background-color);
+        border: var(--button-border);
+        box-shadow: var(--box-shadow);
         transition: all 0.1s ease-in-out;
 
         display: inline-flex;
@@ -5074,7 +5211,7 @@
 
         cursor: pointer;
 
-        color: black;
+        color: var(--button-disposed-label-color);
       }
 
       button:focus {
@@ -5082,8 +5219,8 @@
       }
 
       button.active {
-        background-color: var(--control-handle-color);
-        color: white;
+        background-color: var(--button-active-background-color);
+        color: var(--button-active-label-color);
         border-color: white;
         box-shadow: none;
 
@@ -5205,7 +5342,7 @@
             // noinspection CssUnresolvedCustomProperty
             return css `
       :host {
-        --panel-wrapper-background-color: #b13f1a;
+        --panel-wrapper-background-color: var(--lfo-panel-color);
       }
 
       .lfo-controls {
@@ -5400,6 +5537,10 @@
                 },
             }));
         }
+        toggleActive() {
+        }
+        toggleInactive() {
+        }
         get options() {
             switch (this.mode) {
                 case MenuMode.MIDI_CHANNEL:
@@ -5425,9 +5566,9 @@
       .menu .button-wrapper button {
         font-size: var(--button-font-size, 0.5em);
 
-        background-color: var(--lighter-color);
-        border: 1px solid var(--light-color, #ccc);
-        box-shadow: 0px 1px 1px 1px var(--control-background-color, #ccc);
+        background-color: var(--button-disposed-background-color);
+        border: var(--button-border);
+        box-shadow: var(--box-shadow);
         transition: all 0.1s ease-in-out;
 
         display: inline-flex;
@@ -5438,7 +5579,7 @@
 
         height: 100%;
 
-        color: black;
+        color: var(--button-disposed-label-color);
       }
 
       .menu .button-wrapper button:disabled {
@@ -5451,26 +5592,31 @@
       }
 
       .menu .button-wrapper button.active {
-        background-color: var(--control-handle-color);
-        color: white;
-        box-shadow: 0px 1px 1px 1px var(--control-background-color, #ccc);
+        background-color: var(--button-active-background-color);
+        border: 1px solid transparent;
+        color: var(--button-active-label-color);
+        box-shadow: var(--box-shadow);
         transition: all 0.1s ease-in-out;
         cursor: auto;
       }
 
       .menu .button-wrapper.select button:active {
-        transform: scale(0.999);
+        transform: scale(0.99);
+        background-color: var(--button-active-background-color);
+        color: var(--button-active-label-color);  
       }
 
       .menu .label {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 2em;
+        font-size: 2.3em;
         font-weight: 700;
         line-height: 1em;
-        color: var(--control-top-color);
-        margin-left: 1em;
+        color: var(--main-panel-label-color);
+        font-family: var(--main-panel-label-font-family);
+        margin-left: 0.5em;
+        letter-spacing: 0.1em;
       }
     `;
         }
@@ -5535,14 +5681,23 @@
         get osc1CentShift() {
             return this.params.get("osc1CentShift");
         }
+        get osc1Cycle() {
+            return this.params.get("osc1Cycle");
+        }
         get osc2SemiShift() {
             return this.params.get("osc2SemiShift");
         }
         get osc2CentShift() {
             return this.params.get("osc2CentShift");
         }
+        get osc2Cycle() {
+            return this.params.get("osc2Cycle");
+        }
         get osc2Amplitude() {
             return this.params.get("osc2Amplitude");
+        }
+        get noiseLevel() {
+            return this.params.get("noiseLevel");
         }
         get osc1() {
             return this.params.get("osc1");
@@ -5622,13 +5777,16 @@
                 mode: new SelectControl(state.osc1.mode.value),
                 semiShift: new MidiControl(MidiControlID.OSC1_SEMI, state.osc1.semiShift.value),
                 centShift: new MidiControl(MidiControlID.OSC1_CENT, state.osc1.centShift.value),
+                cycle: new MidiControl(MidiControlID.OSC1_CYCLE, state.osc1.cycle.value)
             },
             osc2: {
                 mode: new SelectControl(state.osc2.mode.value),
                 semiShift: new MidiControl(MidiControlID.OSC2_SEMI, state.osc2.semiShift.value),
                 centShift: new MidiControl(MidiControlID.OSC2_CENT, state.osc2.centShift.value),
+                cycle: new MidiControl(MidiControlID.OSC2_CYCLE, state.osc2.cycle.value)
             },
             osc2Amplitude: new MidiControl(MidiControlID.OSC_MIX, state.osc2Amplitude.value),
+            noiseLevel: new MidiControl(MidiControlID.NOISE_LEVEL, state.noiseLevel.value),
             envelope: {
                 attack: new MidiControl(MidiControlID.ATTACK, state.envelope.attack.value),
                 decay: new MidiControl(MidiControlID.DECAY, state.envelope.decay.value),
@@ -5708,6 +5866,7 @@
         VoiceEvent["NOTE_OFF"] = "NOTE_OFF";
         VoiceEvent["OSC1"] = "OSC1";
         VoiceEvent["OSC_MIX"] = "OSC_MIX";
+        VoiceEvent["NOISE"] = "NOISE";
         VoiceEvent["OSC2"] = "OSC2";
         VoiceEvent["FILTER"] = "FILTER";
         VoiceEvent["ENVELOPE"] = "ENVELOPE";
@@ -5735,13 +5894,16 @@
                     mode: { value: OscillatorMode.SINE },
                     semiShift: { value: 127 - 127 / 4 },
                     centShift: { value: 127 / 2 },
+                    cycle: { value: 127 / 2 },
                 },
                 osc2: {
                     mode: { value: OscillatorMode.SINE },
                     semiShift: { value: 127 / 2 },
                     centShift: { value: 127 - 127 / 3 },
+                    cycle: { value: 127 / 2 },
                 },
                 osc2Amplitude: { value: 127 / 2 },
+                noiseLevel: { value: 0 },
                 envelope: {
                     attack: { value: 0 },
                     decay: { value: 127 / 16 },
@@ -5771,47 +5933,6 @@
                     destination: { value: LfoDestination.CUTOFF },
                 },
             });
-            this._state = createVoiceState({
-                osc1: {
-                    mode: { value: OscillatorMode.SAWTOOTH },
-                    semiShift: { value: 127 - 127 / 4 },
-                    centShift: { value: 127 / 2 },
-                },
-                osc2: {
-                    mode: { value: OscillatorMode.SINE },
-                    semiShift: { value: 127 / 2 },
-                    centShift: { value: 127 - 127 / 3 },
-                },
-                osc2Amplitude: { value: 127 - 127 / 4 },
-                envelope: {
-                    attack: { value: 0 },
-                    decay: { value: 127 / 4 },
-                    sustain: { value: 127 / 2 },
-                    release: { value: 0 },
-                },
-                filter: {
-                    mode: { value: FilterMode.LOWPASS_PLUS },
-                    cutoff: { value: 127 / 4 },
-                    resonance: { value: 127 - 127 / 4 },
-                },
-                cutoffMod: {
-                    attack: { value: 127 / 8 },
-                    decay: { value: 127 / 3 },
-                    amount: { value: 127 / 4 },
-                },
-                lfo1: {
-                    mode: { value: OscillatorMode.SQUARE },
-                    frequency: { value: 127 / 8 },
-                    modAmount: { value: 127 },
-                    destination: { value: LfoDestination.FREQUENCY },
-                },
-                lfo2: {
-                    mode: { value: OscillatorMode.SQUARE },
-                    frequency: { value: 127 / 4 },
-                    modAmount: { value: 127 / 12 },
-                    destination: { value: LfoDestination.CUTOFF },
-                },
-            });
             this.voiceGenerator = createVoiceGenerator(audioContext);
             this.voices = new Map();
             this.output = new GainNode(audioContext);
@@ -5828,10 +5949,13 @@
             voice.osc1.value = this.state.osc1.mode.value;
             voice.osc1SemiShift.value = this.state.osc1.semiShift.value;
             voice.osc1CentShift.value = this.state.osc1.centShift.value;
+            voice.osc1Cycle.value = this.state.osc1.cycle.value;
             voice.osc2.value = this.state.osc2.mode.value;
             voice.osc2SemiShift.value = this.state.osc2.semiShift.value;
             voice.osc2CentShift.value = this.state.osc2.centShift.value;
+            voice.osc2Cycle.value = this.state.osc2.cycle.value;
             voice.osc2Amplitude.value = this.state.osc2Amplitude.value;
+            voice.noiseLevel.value = this.state.noiseLevel.value;
             voice.amplitudeAttack.value = this.state.envelope.attack.value;
             voice.amplitudeDecay.value = this.state.envelope.decay.value;
             voice.amplitudeSustain.value = this.state.envelope.sustain.value;
@@ -5895,12 +6019,18 @@
                     return this.dispatch(VoiceEvent.OSC1, Object.assign(Object.assign({}, this.state.osc1), { semiShift: control.clone() }));
                 case MidiControlID.OSC1_CENT:
                     return this.dispatch(VoiceEvent.OSC1, Object.assign(Object.assign({}, this.state.osc1), { centShift: control.clone() }));
+                case MidiControlID.OSC1_CYCLE:
+                    return this.dispatch(VoiceEvent.OSC1, Object.assign(Object.assign({}, this.state.osc1), { cycle: control.clone() }));
                 case MidiControlID.OSC2_SEMI:
                     return this.dispatch(VoiceEvent.OSC2, Object.assign(Object.assign({}, this.state.osc2), { centShift: control.clone() }));
                 case MidiControlID.OSC2_CENT:
-                    return this.dispatch(VoiceEvent.OSC2, Object.assign(Object.assign({}, this.state.osc1), { centShift: control.clone() }));
+                    return this.dispatch(VoiceEvent.OSC2, Object.assign(Object.assign({}, this.state.osc2), { centShift: control.clone() }));
+                case MidiControlID.OSC2_CYCLE:
+                    return this.dispatch(VoiceEvent.OSC2, Object.assign(Object.assign({}, this.state.osc2), { cycle: control.clone() }));
                 case MidiControlID.OSC_MIX:
                     return this.dispatch(VoiceEvent.OSC_MIX, control.clone());
+                case MidiControlID.NOISE_LEVEL:
+                    return this.dispatch(VoiceEvent.NOISE, control.clone());
                 case MidiControlID.CUTOFF:
                     return this.dispatch(VoiceEvent.FILTER, Object.assign(Object.assign({}, this.state.filter), { cutoff: control.clone() }));
                 case MidiControlID.RESONANCE:
@@ -5956,6 +6086,11 @@
             this.dispatchUpdate((voice) => (voice.osc1CentShift.value = newCentShift));
             return this;
         }
+        setOsc1Cycle(newCycle) {
+            this.state.osc1.cycle.value = newCycle;
+            this.dispatchUpdate((voice) => (voice.osc1Cycle.value = newCycle));
+            return this;
+        }
         get osc1() {
             return this.state.osc1;
         }
@@ -5974,8 +6109,18 @@
             this.dispatchUpdate((voice) => (voice.osc2CentShift.value = newCentShift));
             return this;
         }
+        setOsc2Cycle(newCycle) {
+            this.state.osc2.cycle.value = newCycle;
+            this.dispatchUpdate((voice) => (voice.osc2Cycle.value = newCycle));
+            return this;
+        }
         get osc2() {
             return this.state.osc2;
+        }
+        setNoiseLevel(newLevel) {
+            this.state.noiseLevel.value = newLevel;
+            this.dispatchUpdate((voice) => (voice.noiseLevel.value = newLevel));
+            return this;
         }
         setAmplitudeEnvelopeAttack(newAttackTime) {
             this.state.envelope.attack.value = newAttackTime;
@@ -6185,13 +6330,13 @@
         let currentLearnerID = MidiControlID.NONE;
         let currentChannel = channel;
         if (!midiNavigator.requestMIDIAccess) {
-            return Promise.reject("MIDI is not supported, returning a noop dispatcher");
+            return Promise.reject("MIDI is not supported");
         }
         try {
             midiAccess = await midiNavigator.requestMIDIAccess();
         }
         catch (error) {
-            return Promise.reject("Error requesting MIDI access, returning a noop dispatcher");
+            return Promise.reject("Error requesting MIDI access");
         }
         for (const input of midiAccess.inputs.values()) {
             input.onmidimessage = (message) => {
@@ -6204,8 +6349,7 @@
                 return;
             }
             const messageChannel = message.data.channel;
-            if (messageChannel !== currentChannel &&
-                currentChannel !== MidiOmniChannel) {
+            if (messageChannel !== currentChannel && currentChannel !== MidiOmniChannel) {
                 return;
             }
             if (message.status === Status.NOTE_ON) {
@@ -6398,6 +6542,8 @@
                 case OscillatorEvent.CENT_SHIFT:
                     this.voiceManager.setOsc1CentShift(event.detail.value);
                     break;
+                case OscillatorEvent.CYCLE:
+                    this.voiceManager.setOsc1Cycle(event.detail.value);
             }
         }
         onAmplitudeEnvelopeChange(event) {
@@ -6417,7 +6563,14 @@
             }
         }
         onOscMixChange(event) {
-            this.voiceManager.setOsc2Amplitude(event.detail.value);
+            switch (event.detail.type) {
+                case OscillatorEvent.MIX:
+                    this.voiceManager.setOsc2Amplitude(event.detail.value);
+                    break;
+                case OscillatorEvent.NOISE:
+                    this.voiceManager.setNoiseLevel(event.detail.value);
+                    break;
+            }
         }
         onOsc2Change(event) {
             switch (event.detail.type) {
@@ -6429,6 +6582,9 @@
                     break;
                 case OscillatorEvent.CENT_SHIFT:
                     this.voiceManager.setOsc2CentShift(event.detail.value);
+                    break;
+                case OscillatorEvent.CYCLE:
+                    this.voiceManager.setOsc2Cycle(event.detail.value);
                     break;
             }
         }
@@ -6492,10 +6648,12 @@
             const { type, option } = event.detail;
             switch (type) {
                 case MenuMode.MIDI_LEARN:
-                    this.midiController.setCurrentLearnerID(option.value);
                     this.currentLearnerID = option.value;
+                    this.midiController.setCurrentLearnerID(this.currentLearnerID);
                     break;
                 case MenuMode.MIDI_CHANNEL:
+                    this.currentLearnerID = MidiControlID.NONE;
+                    this.midiController.setCurrentLearnerID(this.currentLearnerID);
                     this.midiController.setCurrentChannel(option.value);
                     break;
             }
@@ -6524,35 +6682,26 @@
               @change=${this.onMenuChange}
             ></menu-element>
           </div>
-          <div class="oscillators">
+          <div class="panels-row">
             <oscillator-element
               .currentLearnerID=${this.currentLearnerID}
               .semiControlID=${MidiControlID.OSC1_SEMI}
               .centControlID=${MidiControlID.OSC1_CENT}
+              .cycleControlID=${MidiControlID.OSC1_CYCLE}
               label="Osc 1"
               .state=${this.state.osc1}
               @change=${this.onOsc1Change}
             ></oscillator-element>
-            <div class="oscillator-mix">
-              <panel-wrapper-element class="oscillator-mix-wrapper">
-                <div class="oscillator-mix-control">
-                  <midi-control-wrapper
-                    .controlID=${MidiControlID.OSC_MIX}
-                    .currentLearnerID=${this.currentLearnerID}
-                  >
-                    <knob-element
-                      label="osc mix"
-                      .value=${this.state.osc2Amplitude.value}
-                      @change=${this.onOscMixChange}
-                    ></knob-element>
-                  </midi-control-wrapper>
-                </div>
-              </panel-wrapper-element>
-            </div>
+            <oscillator-mix-element 
+              .state=${this.state} 
+              .currentLearnerID=${this.currentLearnerID}
+              @change=${this.onOscMixChange}
+            ></oscillator-mix-element>
             <oscillator-element
               .currentLearnerID=${this.currentLearnerID}
               .semiControlID=${MidiControlID.OSC2_SEMI}
               .centControlID=${MidiControlID.OSC2_CENT}
+              .cycleControlID=${MidiControlID.OSC2_CYCLE}
               label="Osc 2"
               .state=${this.state.osc2}
               @change=${this.onOsc2Change}
@@ -6563,7 +6712,7 @@
               @change=${this.onFilterChange}
             ></filter-element>
           </div>
-          <div class="envelopes">
+          <div class="panels-row lower">
             <envelope-element
               .currentLearnerID=${this.currentLearnerID}
               label="envelope"
@@ -6623,56 +6772,26 @@
       }
 
       .menu {
-        margin: 0 0 10px 0;
+        margin: 0 0 15px 0;
       }
 
       .synth {
         margin: 20px auto;
         width: 650px;
 
-        background-color: #d7893b;
+        background-color: var(--main-panel-color);
 
         border-radius: 0.5rem;
-        padding: 1rem;
+        padding: 1.5em;
       }
 
-      .synth .oscillators {
-        display: flex;
-
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .synth .oscillator-mix {
-        --knob-size: 60px;
-        --panel-wrapper-background-color: #7a1621;
-        display: inline-flex;
-        justify-content: center;
-      }
-
-      .synth .oscillator-mix.focused {
-        animation: control-focus 1s ease-in-out infinite;
-      }
-
-      @keyframes control-focus {
-        to {
-          --control-handle-color: #abbdcd;
-          --control-top-color: #252525;
-        }
-      }
-
-      .synth .oscillator-mix .oscillator-mix-control {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-      }
-
-      .synth .envelopes {
+      .synth .panels-row {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: center; 
+      }
 
+      .synth .panels-row.lower {
         margin-top: 1em;
       }
 
@@ -6682,7 +6801,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-top: 0.5em;
+        margin-top: 15px;
       }
 
       .synth .keyboard .keys {
@@ -6700,9 +6819,8 @@
         __metadata("design:type", Object)
     ], Root.prototype, "pressedKeys", void 0);
     Root = __decorate([
-        customElement("child-element"),
+        customElement("root-element"),
         __metadata("design:paramtypes", [])
     ], Root);
 
 })));
-//# sourceMappingURL=index.js.map

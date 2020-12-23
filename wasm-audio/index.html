@@ -8,16 +8,18 @@
     <title></title>
     <meta name="description" content="" />
     <meta name="author" content="36ve" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Monoton&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <link href="https://fonts.googleapis.com/css2?family=Bungee+Outline&display=swap" rel="stylesheet" />
     <script src="index.js"></script>
   </head>
 
   <body>
     <div class="content">
-      <child-element></child-element>
+      <root-element></root-element>
     </div>
     <script>
       (function () {
@@ -44,16 +46,11 @@
 
         function isChrome() {
           var runtimeWindow = window;
-          return (
-            !!runtimeWindow.chrome &&
-            (!!runtimeWindow.chrome.webstore || !!runtimeWindow.chrome.runtime)
-          );
+          return !!runtimeWindow.chrome && (!!runtimeWindow.chrome.webstore || !!runtimeWindow.chrome.runtime);
         }
 
         function isUpToDate() {
-          var version = navigator.userAgent.match(
-            /Chrom(?:e|ium)\/([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)/
-          );
+          var version = navigator.userAgent.match(/Chrom(?:e|ium)\/([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)/);
           if (version == null || version.length != 5) {
             return false;
           }
@@ -76,9 +73,7 @@
             [
               "WARNING!",
               "This application uses recent Web API and should be run in an up to date Chromium browser.",
-              "For now it has been succesfully tested in major version " +
-                wasmTestedVersion +
-                " only.",
+              "For now it has been succesfully tested in major version " + wasmTestedVersion + " only.",
               "You are adviced to update your browser before going further.",
             ].join("\n")
           );
@@ -89,31 +84,54 @@
 
   <style>
     :root {
+      /* TODO: replace with gray scale */
       --light-color: #68718a;
       --lighter-color: #e8eaec;
       --darker-color: #110517;
 
-      --control-background-color: #110517;
-      --control-top-color: #1f262e;
-      --control-hander-color-focused: var(--lighter-color);
-      --control-handle-color: #c5d7e4;
-      --control-cursor-color: #110517;
-      --control-label-color: var(--control-handle-color);
+      /* gray scale */
+      --darker: #15202b;
+      --dark-secondary: #192734;
+      --medium: #22303c;
+      --light-secondary: #8899a6;
+      --lighter: #ffffff;
 
-      --key-sharp-color: var(--control-top-color);
-      --key-whole-color: var(--lighter-color);
-      --keyboard-panel-color: var(--control-top-color);
+      /* this color is used to emphasis the control when midi learn is toggled => todo rename ? */
+      --control-hander-color-focused: var(--lighter);
+      --control-handle-color: var(--dark-secondary);
+      --control-cursor-color: var(--light-secondary);
+      --control-top-color: var(--light-secondary);
+      --control-label-color: var(--darker);
+      --control-label-font-size: 0.8em;
 
-      --overlay-color: var(--light-color);
+      --button-disposed-background-color: var(--light-secondary);
+      --button-disposed-label-color: var(--darker);
+      --button-active-background-color: var(--dark-secondary);
+      --button-active-label-color: #b4d455;
+      --button-border: 1px solid var(--light-color);
 
-      --ui-transition-time: 0.4s;
-
-      --oscillator-panel-color: #7a1621;
-      --filter-panel-color: #334452;
-      --lfo-panel-color: #b13f1a;
+      --key-sharp-color: var(--dark-secondary);
+      --key-whole-color: var(--light-secondary);
+      --keyboard-panel-color: var(--darker);
 
       --lcd-led-on-color: #b4d455;
-      --lcd-screen-background: darkslategray;
+      --lcd-screen-border-color: var(--light-secondary);
+      --lcd-screen-background: var(--dark-secondary);
+
+      --main-panel-color: #181818;
+      --main-panel-label-font-family: "Bungee Outline", cursive;
+      --main-panel-label-color: var(--lighter);
+
+      --oscillator-panel-color: #145a6a;
+      --oscillator-mix-panel-color: var(--oscillator-panel-color);
+      --envelope-panel-color: var(--oscillator-panel-color);
+      --filter-panel-color: #ac8f1d;
+      --filter-mod-panel-color: var(--filter-panel-color);
+      --lfo-panel-color: #9a1a40;
+
+      --panel-wrapper-label-color: var(--lighter);
+
+      --ui-transition-time: 0.4s;
     }
 
     html {
@@ -121,7 +139,7 @@
     }
 
     body {
-      background-color: var(--darker-color, black);
+      background-color: #121212;
     }
 
     .content {
