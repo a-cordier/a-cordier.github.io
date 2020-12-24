@@ -5221,8 +5221,6 @@
       button.active {
         background-color: var(--button-active-background-color);
         color: var(--button-active-label-color);
-        border-color: white;
-        box-shadow: none;
 
         cursor: auto;
       }
@@ -5467,7 +5465,7 @@
             PRESET
           </button>
         </div>
-        <div class="button-wrapper">
+        <div class="button-wrapper channel">
           <button
             class="${this.computeButtonClasses(MenuMode.MIDI_CHANNEL)}"
             @click=${this.createSwitchModeHandler(MenuMode.MIDI_CHANNEL)}
@@ -5537,10 +5535,6 @@
                 },
             }));
         }
-        toggleActive() {
-        }
-        toggleInactive() {
-        }
         get options() {
             switch (this.mode) {
                 case MenuMode.MIDI_CHANNEL:
@@ -5598,6 +5592,14 @@
         box-shadow: var(--box-shadow);
         transition: all 0.1s ease-in-out;
         cursor: auto;
+      }
+
+      .menu .button-wrapper.channel {
+        margin: 0 1px;
+      }
+
+      .menu .button-wrapper.select {
+        margin: 0 1px;
       }
 
       .menu .button-wrapper.select button:active {
