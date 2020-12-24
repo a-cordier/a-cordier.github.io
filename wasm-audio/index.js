@@ -6450,7 +6450,7 @@
         }
     }
 
-    let Root = class Root extends LitElement {
+    let WasmPoly = class WasmPoly extends LitElement {
         constructor() {
             super();
             this.currentLearnerID = MidiControlID.NONE;
@@ -6817,10 +6817,110 @@
     __decorate([
         property({ type: Object }),
         __metadata("design:type", Object)
-    ], Root.prototype, "pressedKeys", void 0);
-    Root = __decorate([
-        customElement("root-element"),
+    ], WasmPoly.prototype, "pressedKeys", void 0);
+    WasmPoly = __decorate([
+        customElement("wasm-poly-element"),
         __metadata("design:paramtypes", [])
+    ], WasmPoly);
+
+    let Error$1 = class Error extends LitElement {
+        render() {
+            return html `
+      <div class="error">
+        <div class="content">
+            <div class="heading">SORRY!</div>
+            <div class="message">${this.message}</div>
+        </div>  
+      </div>
+    `;
+        }
+        static get styles() {
+            return css `
+        .error {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+        }
+
+        .error .content {
+            max-width: 50%; 
+        }
+
+        .heading {
+            color: #9a1a40;
+            font-family: var(--main-panel-label-font-family);
+            font-size: 100px;
+            text-align: center; 
+        }
+
+        .message {
+            color: var(--lighter);
+            font-size: 50px;
+            text-align: center;    
+        }
+    `;
+        }
+    };
+    __decorate([
+        property({ type: String }),
+        __metadata("design:type", String)
+    ], Error$1.prototype, "message", void 0);
+    Error$1 = __decorate([
+        customElement("error-element")
+    ], Error$1);
+
+    const wasmTestedVersion = 84;
+    var BrowserStatus;
+    (function (BrowserStatus) {
+        BrowserStatus[BrowserStatus["OK"] = 0] = "OK";
+        BrowserStatus[BrowserStatus["NOK"] = 1] = "NOK";
+    })(BrowserStatus || (BrowserStatus = {}));
+    function isChrome() {
+        const runtimeWindow = window;
+        return !!runtimeWindow.chrome && (!!runtimeWindow.chrome.webstore || !!runtimeWindow.chrome.runtime);
+    }
+    function isUpToDate() {
+        let version = navigator.userAgent.match(/Chrom(?:e|ium)\/([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)/);
+        if (version == null || version.length != 5) {
+            return false;
+        }
+        version = version.map((v) => parseInt(v, 10));
+        const majorVersion = version[1];
+        return majorVersion >= wasmTestedVersion;
+    }
+    const nonChromiumMessage = `
+This application uses browser features that have not been fully standardized yet.
+Please switch to a Chromium browser before going further.
+`;
+    const notUpToDateMessage = `
+This application uses recent browser featurres and should be run in an up to date Chromium browser.
+Please update your Chromium browser to at least major version ${wasmTestedVersion} before going further.
+`;
+    let Root = class Root extends LitElement {
+        render() {
+            const { status, message } = this.browserState;
+            return status === BrowserStatus.NOK ? html `
+      <error-element .message=${message}></error-element>
+    ` : html `<wasm-poly-element></wasm-poly-element>`;
+        }
+        get browserState() {
+            if (!isChrome()) {
+                return {
+                    status: BrowserStatus.NOK,
+                    message: nonChromiumMessage
+                };
+            }
+            if (!isUpToDate()) {
+                return {
+                    status: BrowserStatus.NOK,
+                    message: notUpToDateMessage
+                };
+            }
+            return { status: BrowserStatus.OK };
+        }
+    };
+    Root = __decorate([
+        customElement("root-element")
     ], Root);
 
 })));
