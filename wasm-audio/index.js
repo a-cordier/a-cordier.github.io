@@ -5554,7 +5554,7 @@
       }
 
       .lcd-wrapper {
-        margin: 0.1em 0.5em 0 0.5em;
+        margin: 0.3em 0.5em 0 0.5em;
       }
 
       .menu .button-wrapper button {
