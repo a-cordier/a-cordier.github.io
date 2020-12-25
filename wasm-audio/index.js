@@ -5184,6 +5184,7 @@
             this.dispatchChange(this.options.getCurrent());
         }
         dispatchChange({ value }) {
+            console.log(value);
             this.dispatchEvent(new CustomEvent("change", { detail: { value } }));
         }
         static get styles() {
@@ -5249,13 +5250,9 @@
         LfoDestination[LfoDestination["OSCILLATOR_MIX"] = 1] = "OSCILLATOR_MIX";
         LfoDestination[LfoDestination["CUTOFF"] = 2] = "CUTOFF";
         LfoDestination[LfoDestination["RESONANCE"] = 3] = "RESONANCE";
+        LfoDestination[LfoDestination["OSC1_CYCLE"] = 4] = "OSC1_CYCLE";
+        LfoDestination[LfoDestination["OSC2_CYCLE"] = 5] = "OSC2_CYCLE";
     })(LfoDestination || (LfoDestination = {}));
-    const lfoDestinations = new SelectOptions([
-        { value: LfoDestination.OSCILLATOR_MIX, name: "OSC MIX" },
-        { value: LfoDestination.FREQUENCY, name: "FREQUENCY" },
-        { value: LfoDestination.CUTOFF, name: "CUTOFF" },
-        { value: LfoDestination.RESONANCE, name: "RESONANCE" },
-    ]);
 
     let Lfo = class Lfo extends LitElement {
         constructor() {
@@ -5265,7 +5262,9 @@
                 { value: LfoDestination.OSCILLATOR_MIX, name: "OSC MIX" },
                 { value: LfoDestination.FREQUENCY, name: "FREQUENCY" },
                 { value: LfoDestination.CUTOFF, name: "CUTOFF" },
-                { value: LfoDestination.RESONANCE, name: "RESONANCE" },
+                // { value: LfoDestination.RESONANCE, name: "RESONANCE" },
+                { value: LfoDestination.OSC1_CYCLE, name: "OSC1 CYCLE" },
+                { value: LfoDestination.OSC2_CYCLE, name: "OSC2 CYCLE" },
             ]);
             this.shouldMidiLearn = false;
             this.currentLearnerID = MidiControlID.NONE;
