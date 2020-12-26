@@ -6921,9 +6921,10 @@ Please update your Chromium browser to at least major version ${wasmTestedVersio
         }
         return { status: BrowserStatus.OK };
     }
+    const browserState = getBrowserState();
     let Root = class Root extends LitElement {
         render() {
-            const { status, message } = getBrowserState();
+            const { status, message } = browserState;
             return status === BrowserStatus.NOK ? html `
       <error-element .message=${message}></error-element>
     ` : html `<wasm-poly-element></wasm-poly-element>`;
