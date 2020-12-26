@@ -6906,27 +6906,27 @@ Please switch to a Chromium browser before going further.
 This application uses recent browser featurres and should be run in an up to date Chromium browser.
 Please update your Chromium browser to at least major version ${wasmTestedVersion} before going further.
 `;
+    function getBrowserState() {
+        if (!isChrome()) {
+            return {
+                status: BrowserStatus.NOK,
+                message: nonChromiumMessage
+            };
+        }
+        if (!isUpToDate()) {
+            return {
+                status: BrowserStatus.NOK,
+                message: notUpToDateMessage
+            };
+        }
+        return { status: BrowserStatus.OK };
+    }
     let Root = class Root extends LitElement {
         render() {
-            const { status, message } = this.browserState;
+            const { status, message } = getBrowserState();
             return status === BrowserStatus.NOK ? html `
       <error-element .message=${message}></error-element>
     ` : html `<wasm-poly-element></wasm-poly-element>`;
-        }
-        get browserState() {
-            if (!isChrome()) {
-                return {
-                    status: BrowserStatus.NOK,
-                    message: nonChromiumMessage
-                };
-            }
-            if (!isUpToDate()) {
-                return {
-                    status: BrowserStatus.NOK,
-                    message: notUpToDateMessage
-                };
-            }
-            return { status: BrowserStatus.OK };
         }
     };
     Root = __decorate([
