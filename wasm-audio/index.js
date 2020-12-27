@@ -5106,7 +5106,7 @@
             return css `
       .lcd {
         width: var(--lcd-screen-width, 120px);
-        height: var(--lcd-screen-height, 12px);
+        height: var(--lcd-screen-height, 14px);
 
         display: grid;
         grid-template-columns: repeat(12, 1fr);
@@ -6925,9 +6925,10 @@ Please update your Chromium browser to at least major version ${wasmTestedVersio
     let Root = class Root extends LitElement {
         render() {
             const { status, message } = browserState;
-            return status === BrowserStatus.NOK ? html `
-      <error-element .message=${message}></error-element>
-    ` : html `<wasm-poly-element></wasm-poly-element>`;
+            return status === BrowserStatus.OK ?
+                html `<wasm-poly-element></wasm-poly-element>` :
+                html `<error-element .message=${message}></error-element>
+    `;
         }
     };
     Root = __decorate([
