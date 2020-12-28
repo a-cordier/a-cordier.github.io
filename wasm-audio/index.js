@@ -3615,17 +3615,18 @@
         MidiControlID[MidiControlID["OSC2_CYCLE"] = 7] = "OSC2_CYCLE";
         MidiControlID[MidiControlID["CUTOFF"] = 8] = "CUTOFF";
         MidiControlID[MidiControlID["RESONANCE"] = 9] = "RESONANCE";
-        MidiControlID[MidiControlID["ATTACK"] = 10] = "ATTACK";
-        MidiControlID[MidiControlID["DECAY"] = 11] = "DECAY";
-        MidiControlID[MidiControlID["SUSTAIN"] = 12] = "SUSTAIN";
-        MidiControlID[MidiControlID["RELEASE"] = 13] = "RELEASE";
-        MidiControlID[MidiControlID["LFO1_FREQ"] = 14] = "LFO1_FREQ";
-        MidiControlID[MidiControlID["LFO1_MOD"] = 15] = "LFO1_MOD";
-        MidiControlID[MidiControlID["LFO2_FREQ"] = 16] = "LFO2_FREQ";
-        MidiControlID[MidiControlID["LFO2_MOD"] = 17] = "LFO2_MOD";
-        MidiControlID[MidiControlID["CUT_MOD"] = 18] = "CUT_MOD";
-        MidiControlID[MidiControlID["CUT_ATTACK"] = 19] = "CUT_ATTACK";
-        MidiControlID[MidiControlID["CUT_DECAY"] = 20] = "CUT_DECAY";
+        MidiControlID[MidiControlID["DRIVE"] = 10] = "DRIVE";
+        MidiControlID[MidiControlID["ATTACK"] = 11] = "ATTACK";
+        MidiControlID[MidiControlID["DECAY"] = 12] = "DECAY";
+        MidiControlID[MidiControlID["SUSTAIN"] = 13] = "SUSTAIN";
+        MidiControlID[MidiControlID["RELEASE"] = 14] = "RELEASE";
+        MidiControlID[MidiControlID["LFO1_FREQ"] = 15] = "LFO1_FREQ";
+        MidiControlID[MidiControlID["LFO1_MOD"] = 16] = "LFO1_MOD";
+        MidiControlID[MidiControlID["LFO2_FREQ"] = 17] = "LFO2_FREQ";
+        MidiControlID[MidiControlID["LFO2_MOD"] = 18] = "LFO2_MOD";
+        MidiControlID[MidiControlID["CUT_MOD"] = 19] = "CUT_MOD";
+        MidiControlID[MidiControlID["CUT_ATTACK"] = 20] = "CUT_ATTACK";
+        MidiControlID[MidiControlID["CUT_DECAY"] = 21] = "CUT_DECAY";
     })(MidiControlID || (MidiControlID = {}));
     function toSelectOption(option) {
         return {
@@ -3648,6 +3649,7 @@
         toSelectOption(MidiControlID.RELEASE),
         toSelectOption(MidiControlID.CUTOFF),
         toSelectOption(MidiControlID.RESONANCE),
+        toSelectOption(MidiControlID.DRIVE),
         toSelectOption(MidiControlID.CUT_MOD),
         toSelectOption(MidiControlID.CUT_ATTACK),
         toSelectOption(MidiControlID.CUT_DECAY),
@@ -3706,7 +3708,7 @@
           </div>
           <div class="tone-controls">
             <div class="shift-control">
-              <div class="semi-shift-control">
+              <div class="knob-control semi-shift-control">
                 <midi-control-wrapper
                   controlID=${this.semiControlID}
                   currentLearnerID=${this.currentLearnerID}
@@ -3720,7 +3722,7 @@
               <label>semi</label>
             </div>
             <div class="shift-control">
-              <div class="cent-shift-control cent">
+              <div class="knob-control cent-shift-control cent">
                 <midi-control-wrapper
                   controlID=${this.centControlID}
                   currentLearnerID=${this.currentLearnerID}
@@ -3734,7 +3736,7 @@
               <label>cents</label>
             </div>
             <div class="shift-control">
-              <div class="cycle-shift-control cycle">
+              <div class="knob-control cycle-shift-control cycle">
                 <midi-control-wrapper
                   controlID=${this.cycleControlID}
                   currentLearnerID=${this.currentLearnerID}
@@ -3781,34 +3783,24 @@
         justify-content: center;
       }
 
-      .oscillator-controls .tone-controls .semi-shift-control {
+      .oscillator-controls .tone-controls .knob-control {
         display: flex;
         flex-direction: row;
         align-items: center;
 
         width: 100%;
         height: 90%;
+      }
 
+      .oscillator-controls .tone-controls .semi-shift-control {
         --knob-size: 50px;
       }
 
       .oscillator-controls .tone-controls .cent-shift-control {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        width: 100%;
-        height: 90%;
         --knob-size: 40px;
       }
 
       .oscillator-controls .tone-controls .cycle-shift-control {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        width: 100%;
-        height: 90%;
         --knob-size: 35px;
       }
 
@@ -3945,6 +3937,7 @@
         FilterEvent[FilterEvent["MODE"] = 0] = "MODE";
         FilterEvent[FilterEvent["CUTOFF"] = 1] = "CUTOFF";
         FilterEvent[FilterEvent["RESONANCE"] = 2] = "RESONANCE";
+        FilterEvent[FilterEvent["DRIVE"] = 3] = "DRIVE";
     })(FilterEvent || (FilterEvent = {}));
 
     var _a$1;
@@ -4130,6 +4123,9 @@
         onResonanceChange(event) {
             this.dispatchChange(FilterEvent.RESONANCE, event.detail.value);
         }
+        onDriveChange(event) {
+            this.dispatchChange(FilterEvent.DRIVE, event.detail.value);
+        }
         onTypeChange(event) {
             this.dispatchChange(FilterEvent.MODE, event.detail.value);
         }
@@ -4148,32 +4144,46 @@
           </div>
           <div class="frequency-controls">
             <div class="frequency-control">
-              <div class="cutoff-control">
+              <div class="knob-control cutoff-control">
                 <midi-control-wrapper
                   controlID=${MidiControlID.CUTOFF}
                   currentLearnerID=${this.currentLearnerID}
                 >
                   <knob-element
-                    label="cutoff"
                     .value=${this.state.cutoff.value}
                     @change=${this.onCutoffChange}
                   ></knob-element>
                 </midi-control-wrapper>
               </div>
+              <label>cutoff</label>
             </div>
             <div class="frequency-control">
-              <div class="resonance-control">
+              <div class="knob-control resonance-control">
                 <midi-control-wrapper
                   controlID=${MidiControlID.RESONANCE}
                   currentLearnerID=${this.currentLearnerID}
                 >
                   <knob-element
-                    label="reson."
                     .value=${this.state.resonance.value}
                     @change=${this.onResonanceChange}
                   ></knob-element>
                 </midi-control-wrapper>
               </div>
+              <label>res.</label>
+            </div>
+            <div class="frequency-control">
+              <div class="knob-control drive-control">
+                <midi-control-wrapper
+                  controlID=${MidiControlID.DRIVE}
+                  currentLearnerID=${this.currentLearnerID}
+                >
+                  <knob-element
+                    .value=${this.state.drive.value}
+                    @change=${this.onDriveChange}
+                  ></knob-element>
+                </midi-control-wrapper>
+              </div>
+              <label>drive</label>
             </div>
           </div>
         </div>
@@ -4188,7 +4198,8 @@
       }
 
       .filter-controls {
-        width: 150px;
+        position: relative;
+        width: 160px;
         height: 120px;
       }
 
@@ -4199,37 +4210,46 @@
 
       .filter-controls .frequency-controls {
         display: flex;
-        align-items: center;
-        justify-content: center;
+        justify-content: space-around;
         width: 100%;
-
         margin-top: 1em;
       }
 
-      .frequency-controls .frequency-control {
-        width: 50%;
-        height: 90%;
-        --knob-size: 50px;
-
+      .filter-controls .frequency-control {
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
+      }
+
+      .filter-controls .frequency-controls .knob-control {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        width: 100%;
+        height: 90%;
       }
 
       .frequency-control .cutoff-control {
         display: flex;
         flex-direction: row;
         align-items: center;
+        --knob-size: 50px;
       }
 
-      .frequency-controls .resonance-control {
-        --knob-size: 50px;
+      .frequency-control .resonance-control {
+        --knob-size: 40px;
+      }
+
+      .frequency-control .drive-control {
+        --knob-size: 35px;
       }
 
       label {
         display: block;
-        color: white;
-        font-size: 0.8em;
+        color: var(--control-label-color);
+        font-size: var(--control-label-font-size);
       }
     `;
         }
@@ -5671,6 +5691,9 @@
         get resonance() {
             return this.params.get("resonance");
         }
+        get drive() {
+            return this.params.get("drive");
+        }
         get cutoffEnvelopeAmount() {
             return this.params.get("cutoffEnvelopeAmount");
         }
@@ -5802,6 +5825,7 @@
                 mode: new SelectControl(state.filter.mode.value),
                 cutoff: new MidiControl(MidiControlID.CUTOFF, state.filter.cutoff.value),
                 resonance: new MidiControl(MidiControlID.RESONANCE, state.filter.resonance.value),
+                drive: new MidiControl(MidiControlID.DRIVE, state.filter.drive.value)
             },
             cutoffMod: {
                 attack: new MidiControl(MidiControlID.CUT_ATTACK, state.cutoffMod.attack.value),
@@ -5919,6 +5943,7 @@
                     mode: { value: FilterMode.LOWPASS_PLUS },
                     cutoff: { value: 127 },
                     resonance: { value: 0 },
+                    drive: { value: 0 },
                 },
                 cutoffMod: {
                     attack: { value: 127 / 8 },
@@ -5968,6 +5993,7 @@
             voice.filterMode.value = this.state.filter.mode.value;
             voice.cutoff.value = this.state.filter.cutoff.value;
             voice.resonance.value = this.state.filter.resonance.value;
+            voice.drive.value = this.state.filter.drive.value;
             voice.cutoffAttack.value = this.state.cutoffMod.attack.value;
             voice.cutoffDecay.value = this.state.cutoffMod.decay.value;
             voice.cutoffEnvelopeAmount.value = this.state.cutoffMod.amount.value;
@@ -6040,6 +6066,8 @@
                     return this.dispatch(VoiceEvent.FILTER, Object.assign(Object.assign({}, this.state.filter), { cutoff: control.clone() }));
                 case MidiControlID.RESONANCE:
                     return this.dispatch(VoiceEvent.FILTER, Object.assign(Object.assign({}, this.state.filter), { resonance: control.clone() }));
+                case MidiControlID.DRIVE:
+                    return this.dispatch(VoiceEvent.FILTER, Object.assign(Object.assign({}, this.state.filter), { drive: control.clone() }));
                 case MidiControlID.ATTACK:
                     return this.dispatch(VoiceEvent.ENVELOPE, Object.assign(Object.assign({}, this.state.envelope), { attack: control.clone() }));
                 case MidiControlID.DECAY:
@@ -6167,6 +6195,11 @@
         setFilterResonance(newResonance) {
             this.state.filter.resonance.value = newResonance;
             this.dispatchUpdate((voice) => (voice.resonance.value = newResonance));
+            return this;
+        }
+        setDrive(newDrive) {
+            this.state.filter.drive.value = newDrive;
+            this.dispatchUpdate((voice) => (voice.drive.value = newDrive));
             return this;
         }
         get filter() {
@@ -6607,6 +6640,9 @@
                     break;
                 case FilterEvent.RESONANCE:
                     this.voiceManager.setFilterResonance(event.detail.value);
+                    break;
+                case FilterEvent.DRIVE:
+                    this.voiceManager.setDrive(event.detail.value);
                     break;
             }
         }
