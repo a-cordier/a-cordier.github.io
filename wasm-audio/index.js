@@ -2662,14 +2662,15 @@
      * @param {number} midiValue - midi value for note
      * @returns {Note}
      */
-    function midiToNote(midiValue) {
-        const pitchClassIndex = (midiValue - 12 * 2) % 12;
-        const octave = (midiValue - pitchClassIndex - 12) / 12;
+    function midiToNote({ value, velocity = 127 }) {
+        const pitchClassIndex = (value - 12 * 2) % 12;
+        const octave = (value - pitchClassIndex - 12) / 12;
         return {
             pitchClass: pitchClasses[pitchClassIndex],
             octave,
-            frequency: midiToFrequency(midiValue),
-            midiValue,
+            frequency: midiToFrequency(value),
+            midiValue: value,
+            velocity,
         };
     }
     /**
@@ -2710,6 +2711,7 @@
                 octave,
                 frequency: symbolToFrequency(pitchClass, octave, tuning),
                 midiValue: noteToMidi(pitchClass, octave),
+                velocity: 127,
             };
         })
             .filter((note) => note.frequency !== null);
@@ -3477,6 +3479,7 @@
         color: var(--control-label-color);
         display: flex;
         justify-content: center;
+        margin-top: -5px;
       }
     `;
         }
@@ -3625,8 +3628,9 @@
         MidiControlID[MidiControlID["LFO2_FREQ"] = 17] = "LFO2_FREQ";
         MidiControlID[MidiControlID["LFO2_MOD"] = 18] = "LFO2_MOD";
         MidiControlID[MidiControlID["CUT_MOD"] = 19] = "CUT_MOD";
-        MidiControlID[MidiControlID["CUT_ATTACK"] = 20] = "CUT_ATTACK";
-        MidiControlID[MidiControlID["CUT_DECAY"] = 21] = "CUT_DECAY";
+        MidiControlID[MidiControlID["CUT_VEL"] = 20] = "CUT_VEL";
+        MidiControlID[MidiControlID["CUT_ATTACK"] = 21] = "CUT_ATTACK";
+        MidiControlID[MidiControlID["CUT_DECAY"] = 22] = "CUT_DECAY";
     })(MidiControlID || (MidiControlID = {}));
     function toSelectOption(option) {
         return {
@@ -3651,6 +3655,7 @@
         toSelectOption(MidiControlID.RESONANCE),
         toSelectOption(MidiControlID.DRIVE),
         toSelectOption(MidiControlID.CUT_MOD),
+        toSelectOption(MidiControlID.CUT_VEL),
         toSelectOption(MidiControlID.CUT_ATTACK),
         toSelectOption(MidiControlID.CUT_DECAY),
         toSelectOption(MidiControlID.LFO1_FREQ),
@@ -4169,7 +4174,7 @@
                   ></knob-element>
                 </midi-control-wrapper>
               </div>
-              <label>res.</label>
+              <label>res</label>
             </div>
             <div class="frequency-control">
               <div class="knob-control drive-control">
@@ -4578,6 +4583,7 @@
         FilterEnvelopeEvent[FilterEnvelopeEvent["ATTACK"] = 0] = "ATTACK";
         FilterEnvelopeEvent[FilterEnvelopeEvent["DECAY"] = 1] = "DECAY";
         FilterEnvelopeEvent[FilterEnvelopeEvent["AMOUNT"] = 2] = "AMOUNT";
+        FilterEnvelopeEvent[FilterEnvelopeEvent["VELOCITY"] = 3] = "VELOCITY";
     })(FilterEnvelopeEvent || (FilterEnvelopeEvent = {}));
 
     let FilterEnvelope = class FilterEnvelope extends LitElement {
@@ -4593,6 +4599,9 @@
         }
         onAmountChange(event) {
             this.dispatchChange(FilterEnvelopeEvent.AMOUNT, event.detail.value);
+        }
+        onVelocityChange(event) {
+            this.dispatchChange(FilterEnvelopeEvent.VELOCITY, event.detail.value);
         }
         dispatchChange(type, value) {
             this.dispatchEvent(new CustomEvent("change", { detail: { type, value } }));
@@ -4623,18 +4632,33 @@
               ></fader-element>
             </midi-control-wrapper>
           </div>
-          <div class="mod-control">
-            <midi-control-wrapper
-              controlID=${MidiControlID.CUT_MOD}
-              currentLearnerID=${this.currentLearnerID}
-            >
-              <knob-element
-                label="mod."
-                .value=${this.state.amount.value}
-                @change=${this.onAmountChange}
-              ></knob-element>
-            </midi-control-wrapper>
+          <div class="mod-controls">
+            <div class="mod-control mod">
+              <midi-control-wrapper
+                controlID=${MidiControlID.CUT_MOD}
+                currentLearnerID=${this.currentLearnerID}
+              >
+                <knob-element
+                  label="mod"
+                  .value=${this.state.amount.value}
+                  @change=${this.onAmountChange}
+                ></knob-element>
+              </midi-control-wrapper>
+            </div>
+            <div class="mod-control velocity">
+              <midi-control-wrapper
+                controlID=${MidiControlID.CUT_VEL}
+                currentLearnerID=${this.currentLearnerID}
+              >
+                <knob-element
+                  label="vel"
+                  .value=${this.state.velocity.value}
+                  @change=${this.onVelocityChange}
+                ></knob-element>
+              </midi-control-wrapper>
+            </div>
           </div>
+          
         </div>
       </panel-wrapper-element>
     `;
@@ -4662,6 +4686,23 @@
         justify-content: space-evenly;
 
         width: 60%;
+      }
+
+      .envelope-controls .mod-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        height: 70%;
+
+      }
+
+      .envelope-controls .mod-controls .mod {
+        --knob-size: 40px;
+      }
+
+      .envelope-controls .mod-controls .velocity {
+        --knob-size: 25px;
       }
     `;
         }
@@ -5337,7 +5378,7 @@
                   ></knob-element>
                 </midi-control-wrapper>
               </div>
-              <label>freq.</label>
+              <label>freq</label>
             </div>
             <div class="modulation-control">
               <div class="mod-amount-control">
@@ -5670,6 +5711,9 @@
         get frequency() {
             return this.params.get("frequency");
         }
+        get velocity() {
+            return this.params.get("velocity");
+        }
         get amplitude() {
             return this.params.get("amplitude");
         }
@@ -5696,6 +5740,9 @@
         }
         get cutoffEnvelopeAmount() {
             return this.params.get("cutoffEnvelopeAmount");
+        }
+        get cutoffEnvelopeVelocity() {
+            return this.params.get("cutoffEnvelopeVelocity");
         }
         get cutoffAttack() {
             return this.params.get("cutoffAttack");
@@ -5831,6 +5878,7 @@
                 attack: new MidiControl(MidiControlID.CUT_ATTACK, state.cutoffMod.attack.value),
                 decay: new MidiControl(MidiControlID.CUT_DECAY, state.cutoffMod.decay.value),
                 amount: new MidiControl(MidiControlID.CUT_MOD, state.cutoffMod.amount.value),
+                velocity: new MidiControl(MidiControlID.CUT_VEL, state.cutoffMod.velocity.value)
             },
             lfo1: {
                 mode: new SelectControl(state.lfo1.mode.value),
@@ -5949,6 +5997,7 @@
                     attack: { value: 127 / 8 },
                     decay: { value: 127 / 3 },
                     amount: { value: 0 },
+                    velocity: { value: 0 },
                 },
                 lfo1: {
                     mode: { value: OscillatorMode.SQUARE },
@@ -5970,12 +6019,13 @@
             this.onMidiNoteOff = this.onMidiNoteOff.bind(this);
             this.onMidiCC = this.onMidiCC.bind(this);
         }
-        next({ frequency, midiValue }) {
+        next({ frequency, midiValue, velocity = 127 }) {
             if (this.voices.has(midiValue)) {
                 return this.voices.get(midiValue);
             }
             const voice = this.voiceGenerator.next().value;
             voice.frequency.value = frequency;
+            voice.velocity.value = velocity;
             voice.osc1.value = this.state.osc1.mode.value;
             voice.osc1SemiShift.value = this.state.osc1.semiShift.value;
             voice.osc1CentShift.value = this.state.osc1.centShift.value;
@@ -5997,6 +6047,7 @@
             voice.cutoffAttack.value = this.state.cutoffMod.attack.value;
             voice.cutoffDecay.value = this.state.cutoffMod.decay.value;
             voice.cutoffEnvelopeAmount.value = this.state.cutoffMod.amount.value;
+            voice.cutoffEnvelopeVelocity.value = this.state.cutoffMod.velocity.value;
             voice.lfo1Frequency.value = this.state.lfo1.frequency.value;
             voice.lfo1ModAmount.value = this.state.lfo1.modAmount.value;
             voice.lfo1Mode.value = this.state.lfo1.mode.value;
@@ -6024,7 +6075,7 @@
             return this;
         }
         onMidiNoteOn(message) {
-            const note = midiToNote(message.data.value);
+            const note = midiToNote(message.data);
             this.next(note);
             this.dispatch(VoiceEvent.NOTE_ON, note);
         }
@@ -6090,6 +6141,8 @@
                     return this.dispatch(VoiceEvent.CUTOFF_MOD, Object.assign(Object.assign({}, this.state.cutoffMod), { decay: control.clone() }));
                 case MidiControlID.CUT_MOD:
                     return this.dispatch(VoiceEvent.CUTOFF_MOD, Object.assign(Object.assign({}, this.state.cutoffMod), { amount: control.clone() }));
+                case MidiControlID.CUT_VEL:
+                    return this.dispatch(VoiceEvent.CUTOFF_MOD, Object.assign(Object.assign({}, this.state.cutoffMod), { velocity: control.clone() }));
             }
         }
         stop({ midiValue }) {
@@ -6207,6 +6260,10 @@
         }
         setCutoffEnvelopeAmount(newAmount) {
             this.state.cutoffMod.amount.value = newAmount;
+            return this;
+        }
+        setCutoffEnvelopeVelocity(newVelocity) {
+            this.state.cutoffMod.velocity.value = newVelocity;
             return this;
         }
         setCutoffEnvelopeAttack(newAttackTime) {
@@ -6503,7 +6560,12 @@
             super.connectedCallback();
             this.midiController = await createMidiController(MidiOmniChannel);
             this.setUpVoiceManager();
-            this.analyzer.connect(this.audioContext.destination);
+            const outputFilter = this.audioContext.createBiquadFilter();
+            outputFilter.type = "highshelf";
+            outputFilter.frequency.value = 18000;
+            outputFilter.gain.value = -100;
+            this.analyzer.connect(outputFilter);
+            outputFilter.connect(this.audioContext.destination);
             await this.audioContext.audioWorklet.addModule("voice-processor.js");
             this.registerVoiceHandlers();
         }
@@ -6656,6 +6718,9 @@
                     break;
                 case FilterEnvelopeEvent.AMOUNT:
                     this.voiceManager.setCutoffEnvelopeAmount(event.detail.value);
+                    break;
+                case FilterEnvelopeEvent.VELOCITY:
+                    this.voiceManager.setCutoffEnvelopeVelocity(event.detail.value);
                     break;
             }
         }
