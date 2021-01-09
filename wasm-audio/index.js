@@ -2662,7 +2662,7 @@
      * @param {number} midiValue - midi value for note
      * @returns {Note}
      */
-    function midiToNote({ value, velocity = 127 }) {
+    function midiToNote({ value, velocity = 100 }) {
         const pitchClassIndex = (value - 12 * 2) % 12;
         const octave = (value - pitchClassIndex - 12) / 12;
         return {
@@ -5968,8 +5968,8 @@
             super();
             this.state = createVoiceState({
                 osc1: {
-                    mode: { value: OscillatorMode.SINE },
-                    semiShift: { value: 127 - 127 / 4 },
+                    mode: { value: OscillatorMode.SAWTOOTH },
+                    semiShift: { value: 127 / 4 },
                     centShift: { value: 127 / 2 },
                     cycle: { value: 127 / 2 },
                 },
@@ -5979,7 +5979,7 @@
                     centShift: { value: 127 - 127 / 3 },
                     cycle: { value: 127 / 2 },
                 },
-                osc2Amplitude: { value: 127 / 2 },
+                osc2Amplitude: { value: 0 },
                 noiseLevel: { value: 0 },
                 envelope: {
                     attack: { value: 0 },
@@ -5989,15 +5989,15 @@
                 },
                 filter: {
                     mode: { value: FilterMode.LOWPASS_PLUS },
-                    cutoff: { value: 127 },
-                    resonance: { value: 0 },
-                    drive: { value: 0 },
+                    cutoff: { value: 12 },
+                    resonance: { value: 127 },
+                    drive: { value: 127 },
                 },
                 cutoffMod: {
                     attack: { value: 127 / 8 },
                     decay: { value: 127 / 3 },
                     amount: { value: 0 },
-                    velocity: { value: 0 },
+                    velocity: { value: 12 },
                 },
                 lfo1: {
                     mode: { value: OscillatorMode.SQUARE },
@@ -6019,7 +6019,7 @@
             this.onMidiNoteOff = this.onMidiNoteOff.bind(this);
             this.onMidiCC = this.onMidiCC.bind(this);
         }
-        next({ frequency, midiValue, velocity = 127 }) {
+        next({ frequency, midiValue, velocity = 100 }) {
             if (this.voices.has(midiValue)) {
                 return this.voices.get(midiValue);
             }
