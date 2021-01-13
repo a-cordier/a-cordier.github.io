@@ -5850,18 +5850,116 @@
         customElement("menu-element")
     ], Menu);
 
+    const BooleanParam = Object.freeze({
+      TRUE: 1,
+      FALSE: 0,
+    });
+
+    const VoiceState = Object.freeze({
+      DISPOSED: 0,
+      STARTED: 1,
+      STOPPED: 2,
+    });
+
+    const WaveFormParam = Object.freeze({
+      SINE: 0,
+      SAWTOOTH: 1,
+      SQUARE: 2,
+      TRIANGLE: 3,
+    });
+
+    const FilterModeParam = Object.freeze({
+      LOWPASS: 0,
+      LOWPASS_PLUS: 1,
+      BANDPASS: 2,
+      HIGHPASS: 3,
+    });
+
+    const LfoDestinationParam = Object.freeze({
+      FREQUENCY: 0,
+      OSCILLATOR_MIX: 1,
+      CUTOFF: 2,
+      RESONANCE: 3,
+      OSC1_CYCLE: 4,
+      OSC2_CYCLE: 5,
+    });
+
+    const staticParameterDescriptors = [
+      {
+        name: "state",
+        defaultValue: VoiceState.DISPOSED,
+        minValue: VoiceState.DISPOSED,
+        maxValue: VoiceState.STOPPED,
+        automationRate: "k-rate",
+      },
+      {
+        name: "osc1",
+        defaultValue: WaveFormParam.SINE,
+        minValue: BooleanParam.SINE,
+        maxValue: BooleanParam.TRIANGLE,
+        automationRate: "k-rate",
+      },
+      {
+        name: "osc2",
+        defaultValue: WaveFormParam.SINE,
+        minValue: BooleanParam.SINE,
+        maxValue: BooleanParam.TRIANGLE,
+        automationRate: "k-rate",
+      },
+      {
+        name: "lfo1Mode",
+        defaultValue: WaveFormParam.SINE,
+        minValue: BooleanParam.SINE,
+        maxValue: BooleanParam.TRIANGLE,
+        automationRate: "k-rate",
+      },
+      {
+        name: "lfo2Mode",
+        defaultValue: WaveFormParam.SINE,
+        minValue: BooleanParam.SINE,
+        maxValue: BooleanParam.TRIANGLE,
+        automationRate: "k-rate",
+      },
+      {
+        name: "lfo1Destination",
+        defaultValue: LfoDestinationParam.OSCILLATOR_MIX,
+        minValue: LfoDestinationParam.FREQUENCY,
+        maxValue: LfoDestinationParam.OSC_2_CYCLE,
+        automationRate: "k-rate",
+      },
+      {
+        name: "lfo2Destination",
+        defaultValue: LfoDestinationParam.CUTOFF,
+        minValue: LfoDestinationParam.FREQUENCY,
+        maxValue: LfoDestinationParam.OSC_2_CYCLE,
+        automationRate: "k-rate",
+      },
+      {
+        name: "filterMode",
+        defaultValue: FilterModeParam.LOWPASS,
+        minValue: FilterModeParam.LOWPASS,
+        maxValue: FilterModeParam.HIGHPASS,
+        automationRate: "k-rate",
+      },
+      {
+        name: "velocity",
+        defaultValue: 127,
+        minValue: 0,
+        maxValue: 127,
+        automationRate: "k-rate",
+      },
+    ];
+
     class WasmVoiceNode extends AudioWorkletNode {
         constructor(audioContext) {
             super(audioContext, "voice");
             this.params = this.parameters;
         }
-        start(time = this.context.currentTime) {
-            this.params.get("startTime").value = time;
-            this.params.get("stopped").value = Number(false);
+        start() {
+            this.params.get("state").value = VoiceState.STARTED;
         }
-        stop(time = this.context.currentTime) {
-            this.params.get("stopTime").value = time;
-            this.params.get("stopped").value = Number(true);
+        stop() {
+            this.params.get("state").value = VoiceState.STOPPED;
         }
         get frequency() {
             return this.params.get("frequency");
