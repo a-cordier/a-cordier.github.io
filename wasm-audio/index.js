@@ -5665,10 +5665,6 @@
             super(...arguments);
             this.mode = MenuMode.PRESET;
         }
-        connectedCallback() {
-            super.connectedCallback();
-            this.dispatchChange();
-        }
         render() {
             return html `
       <div class="menu">
@@ -5720,17 +5716,16 @@
                     return () => {
                         this.mode = MenuMode.MIDI_CHANNEL;
                         this.dispatchChange();
-                        this.requestUpdate();
                     };
                 case MenuMode.MIDI_LEARN:
                     return () => {
                         this.mode = MenuMode.MIDI_LEARN;
                         this.dispatchChange();
-                        this.requestUpdate();
                     };
                 case MenuMode.PRESET:
                     return () => {
                         this.mode = MenuMode.PRESET;
+                        this.dispatchChange();
                     };
             }
         }
@@ -6613,9 +6608,8 @@
         };
     }
     function newMidiMessage(data, offset = 0) {
-        /* eslint-disable no-param-reassign */
         const status = data.getUint8(offset) >> 4;
-        const channel = (data.getUint8(offset) & 0xf) + 1;
+        const channel = data.getUint8(offset) & 0xf;
         switch (status) {
             case Status.NOTE_ON:
                 return NoteOn(data, channel);
@@ -6973,15 +6967,19 @@
                     this.midiController.setCurrentLearnerID(this.currentLearnerID);
                     break;
                 case MenuMode.MIDI_CHANNEL:
-                    this.currentLearnerID = MidiControlID.NONE;
-                    this.midiController.setCurrentLearnerID(this.currentLearnerID);
+                    this.unlearn();
                     this.midiController.setCurrentChannel(option.value);
                     break;
                 case MenuMode.PRESET:
+                    this.unlearn();
                     this.state = this.voiceManager.setState(option.value);
                     break;
             }
             await this.requestUpdate();
+        }
+        unlearn() {
+            this.currentLearnerID = MidiControlID.NONE;
+            this.midiController.setCurrentLearnerID(this.currentLearnerID);
         }
         computeVizualizerIfEnabled() {
             if (this.showVizualizer) {
