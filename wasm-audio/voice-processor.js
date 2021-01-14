@@ -3694,7 +3694,7 @@
     return KernelPool;
   }();
 
-  var pool = new KernelPool(64);
+  var pool = new KernelPool(128);
 
   var VoiceProcessor = /*#__PURE__*/function (_AudioWorkletProcesso) {
     _inherits(VoiceProcessor, _AudioWorkletProcesso);
