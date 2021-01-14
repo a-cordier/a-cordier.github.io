@@ -429,7 +429,8 @@
   var VoiceState = Object.freeze({
     DISPOSED: 0,
     STARTED: 1,
-    STOPPED: 2
+    STOPPING: 2,
+    STOPPED: 3
   });
   var WaveFormParam = Object.freeze({
     SINE: 0,
@@ -3662,49 +3663,38 @@
     return kValueOf(parameters.state) === VoiceState.STOPPED;
   }
 
-  var kernels = Array.from({
-    length: 2048
-  }).map(function () {
-    return new Module.VoiceKernel(sampleRate, RENDER_QUANTUM_FRAMES);
-  });
-
-  var VoicePool = /*#__PURE__*/function () {
-    function VoicePool() {
+  var KernelPool = /*#__PURE__*/function () {
+    function KernelPool() {
       var length = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 8;
 
-      _classCallCheck(this, VoicePool);
+      _classCallCheck(this, KernelPool);
 
-      _defineProperty(this, "voices", []);
+      _defineProperty(this, "pool", []);
 
-      this.voices = Array.from({
+      this.pool = Array.from({
         length: length
       }).map(function () {
         return new Module.VoiceKernel(sampleRate, RENDER_QUANTUM_FRAMES);
       });
     }
 
-    _createClass(VoicePool, [{
+    _createClass(KernelPool, [{
       key: "acquire",
       value: function acquire() {
-        return this.voices.shift();
+        return this.pool.shift();
       }
     }, {
       key: "release",
-      value: function release(voice) {
-        voice.reset();
-        this.voices.push(voice);
+      value: function release(kernel) {
+        kernel.reset();
+        this.pool.push(kernel);
       }
     }]);
 
-    return VoicePool;
+    return KernelPool;
   }();
 
-  var State = Object.freeze({
-    DISPOSED: 0,
-    STARTED: 1,
-    STOPPING: 2
-  });
-  var voicePool = new VoicePool(64);
+  var pool = new KernelPool(64);
 
   var VoiceProcessor = /*#__PURE__*/function (_AudioWorkletProcesso) {
     _inherits(VoiceProcessor, _AudioWorkletProcesso);
@@ -3726,9 +3716,9 @@
 
       _defineProperty(_assertThisInitialized(_this), "parameterBuffers", createParameterBuffers(automatedParameterDescriptors));
 
-      _defineProperty(_assertThisInitialized(_this), "kernel", voicePool.acquire());
+      _defineProperty(_assertThisInitialized(_this), "kernel", pool.acquire());
 
-      _defineProperty(_assertThisInitialized(_this), "state", State.DISPOSED);
+      _defineProperty(_assertThisInitialized(_this), "state", VoiceState.DISPOSED);
 
       return _this;
     }
@@ -3736,16 +3726,17 @@
     _createClass(VoiceProcessor, [{
       key: "process",
       value: function process(inputs, outputs, parameters) {
-        if (!isStarted(parameters) && this.state === State.DISPOSED) {
+        if (!isStarted(parameters) && this.state === VoiceState.DISPOSED) {
           return true;
         }
 
-        if (this.state === State.DISPOSED) {
-          this.state = State.STARTED;
+        if (this.state === VoiceState.DISPOSED) {
+          this.state = VoiceState.STARTED;
         }
 
         if (this.kernel.isStopped()) {
-          voicePool.release(this.kernel);
+          this.freeBuffers();
+          pool.release(this.kernel);
           return false;
         }
 
@@ -3753,9 +3744,9 @@
         var channelCount = output.length;
         this.allocateBuffers(channelCount, parameters);
 
-        if (isStopped(parameters) && this.state !== State.STOPPING) {
+        if (isStopped(parameters) && this.state !== VoiceState.STOPPING) {
           this.kernel.enterReleaseStage();
-          this.state = State.STOPPING;
+          this.state = VoiceState.STOPPING;
         }
 
         this.kernel.setVelocity(kValueOf(parameters.velocity)); // Envelope parameters

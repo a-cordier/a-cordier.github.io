@@ -5858,7 +5858,8 @@
     const VoiceState = Object.freeze({
       DISPOSED: 0,
       STARTED: 1,
-      STOPPED: 2,
+      STOPPING: 2,
+      STOPPED: 3,
     });
 
     const WaveFormParam = Object.freeze({
