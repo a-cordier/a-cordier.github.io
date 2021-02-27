@@ -5200,9 +5200,7 @@
             return html `
       <div class="lcd-selector">
         <lcd-element .text=${this.options.getCurrent().name}></lcd-element>
-        <div class="options">
-          ${this.options.map(this.createOptionSelector.bind(this))}
-        </div>
+        <div class="options">${this.options.map(this.createOptionSelector.bind(this))}</div>
       </div>
     `;
         }
@@ -5212,12 +5210,7 @@
         }
         createOptionSelector(_, index) {
             return html `
-      <button
-        @click=${this.createOptionHandler(index)}
-        class="${this.computeButtonClasses(index)}"
-      >
-        ${index}
-      </button>
+      <button @click=${this.createOptionHandler(index)} class="${this.computeButtonClasses(index)}">${index}</button>
     `;
         }
         computeButtonClasses(index) {
@@ -5243,7 +5236,6 @@
             this.dispatchChange(this.options.getCurrent());
         }
         dispatchChange({ value }) {
-            console.log(value);
             this.dispatchEvent(new CustomEvent("change", { detail: { value } }));
         }
         static get styles() {
@@ -5512,100 +5504,51 @@
 
     const PresetOptions = new SelectOptions([
         {
-            name: "SOFOSC",
-            value: {
-                osc1: {
-                    mode: { value: 0 },
-                    semiShift: { controller: -1, id: 0, value: 63.5 },
-                    centShift: { controller: -1, id: 1, value: 63.5 },
-                    cycle: { controller: -1, id: 2, value: 63.5 },
-                },
-                osc2: {
-                    mode: { value: 0 },
-                    semiShift: { controller: -1, id: 5, value: 95.25 },
-                    centShift: { controller: -1, id: 6, value: 63.5 },
-                    cycle: { controller: -1, id: 7, value: 63.5 },
-                },
-                osc2Amplitude: { controller: -1, id: 3, value: 39 },
-                noiseLevel: { controller: -1, id: 4, value: 0 },
-                envelope: {
-                    attack: { controller: -1, id: 11, value: 2.1166666666666734 },
-                    decay: { controller: -1, id: 12, value: 127 },
-                    sustain: { controller: -1, id: 13, value: 127 },
-                    release: { controller: -1, id: 14, value: 64.55833333333332 },
-                },
-                filter: {
-                    mode: { value: 0 },
-                    cutoff: { controller: -1, id: 8, value: 127 },
-                    resonance: { controller: -1, id: 9, value: 0 },
-                    drive: { controller: -1, id: 10, value: 0 },
-                },
-                cutoffMod: {
-                    attack: { controller: -1, id: 21, value: 15.875 },
-                    decay: { controller: -1, id: 22, value: 42.333333333333336 },
-                    amount: { controller: -1, id: 19, value: 0 },
-                    velocity: { controller: -1, id: 20, value: 0 },
-                },
-                lfo1: {
-                    mode: { value: 0 },
-                    destination: { value: 1 },
-                    frequency: { controller: -1, id: 15, value: 15.875 },
-                    modAmount: { controller: -1, id: 16, value: 32 },
-                },
-                lfo2: {
-                    mode: { value: 2 },
-                    destination: { value: 2 },
-                    frequency: { controller: -1, id: 17, value: 31.75 },
-                    modAmount: { controller: -1, id: 18, value: 0 },
-                },
-            },
-        },
-        {
             name: "SAWSEESS",
             value: {
                 osc1: {
                     mode: { value: 1 },
-                    semiShift: { controller: -1, id: 0, value: 31.75 },
-                    centShift: { controller: -1, id: 1, value: 63.5 },
-                    cycle: { controller: -1, id: 2, value: 63.5 },
+                    semiShift: { id: 0, value: 31.75, controller: -1 },
+                    centShift: { id: 1, value: 63.5, controller: -1 },
+                    cycle: { id: 2, value: 63.5, controller: -1 },
                 },
                 osc2: {
                     mode: { value: 1 },
-                    semiShift: { controller: -1, id: 5, value: 63.5 },
-                    centShift: { controller: -1, id: 6, value: 84.66666666666666 },
-                    cycle: { controller: -1, id: 7, value: 63.5 },
+                    semiShift: { id: 5, value: 63.5, controller: -1 },
+                    centShift: { id: 6, value: 84.66666666666666, controller: -1 },
+                    cycle: { id: 7, value: 63.5, controller: -1 },
                 },
-                osc2Amplitude: { controller: -1, id: 3, value: 0 },
-                noiseLevel: { controller: -1, id: 4, value: 0 },
+                osc2Amplitude: { id: 3, value: 24, controller: 21 },
+                noiseLevel: { id: 4, value: 0, controller: -1 },
                 envelope: {
-                    attack: { controller: -1, id: 11, value: 0 },
-                    decay: { controller: -1, id: 12, value: 34.925000000000004 },
-                    sustain: { controller: -1, id: 13, value: 0 },
-                    release: { controller: -1, id: 14, value: 0 },
+                    attack: { id: 11, value: 0, controller: -1 },
+                    decay: { id: 12, value: 34.925000000000004, controller: -1 },
+                    sustain: { id: 13, value: 0, controller: -1 },
+                    release: { id: 14, value: 0, controller: -1 },
                 },
                 filter: {
                     mode: { value: 0 },
-                    cutoff: { controller: -1, id: 8, value: 3.25 },
-                    resonance: { controller: -1, id: 9, value: 127 },
-                    drive: { controller: -1, id: 10, value: 25 },
+                    cutoff: { id: 8, value: 0, controller: 14 },
+                    resonance: { id: 9, value: 127, controller: 15 },
+                    drive: { id: 10, value: 34, controller: 16 },
                 },
                 cutoffMod: {
-                    attack: { controller: -1, id: 21, value: 0 },
-                    decay: { controller: -1, id: 22, value: 27.51666666666667 },
-                    amount: { controller: -1, id: 19, value: 22 },
-                    velocity: { controller: -1, id: 20, value: 0 },
+                    attack: { id: 21, value: 0, controller: 19 },
+                    decay: { id: 22, value: 9, controller: 20 },
+                    amount: { id: 19, value: 21, controller: 17 },
+                    velocity: { id: 20, value: 21, controller: 18 },
                 },
                 lfo1: {
                     mode: { value: 2 },
                     destination: { value: 0 },
-                    frequency: { controller: -1, id: 15, value: 15.875 },
-                    modAmount: { controller: -1, id: 16, value: 0 },
+                    frequency: { id: 15, value: 15.875, controller: -1 },
+                    modAmount: { id: 16, value: 0, controller: -1 },
                 },
                 lfo2: {
                     mode: { value: 2 },
                     destination: { value: 2 },
-                    frequency: { controller: -1, id: 17, value: 31.75 },
-                    modAmount: { controller: -1, id: 18, value: 0 },
+                    frequency: { id: 17, value: 31.75, controller: -1 },
+                    modAmount: { id: 18, value: 0, controller: -1 },
                 },
             },
         },
@@ -5614,47 +5557,47 @@
             value: {
                 osc1: {
                     mode: { value: 2 },
-                    semiShift: { controller: -1, id: 0, value: 63.5 },
-                    centShift: { controller: -1, id: 1, value: 63.5 },
-                    cycle: { controller: -1, id: 2, value: 50.8 },
+                    semiShift: { id: 0, value: 63.5, controller: -1 },
+                    centShift: { id: 1, value: 63.5, controller: -1 },
+                    cycle: { id: 2, value: 50.8, controller: -1 },
                 },
                 osc2: {
-                    mode: { value: 0 },
-                    semiShift: { controller: -1, id: 5, value: 127 },
-                    centShift: { controller: -1, id: 6, value: 63.5 },
-                    cycle: { controller: -1, id: 7, value: 84.66666666666667 },
+                    mode: { value: 2 },
+                    semiShift: { id: 5, value: 127, controller: -1 },
+                    centShift: { id: 6, value: 76.5, controller: -1 },
+                    cycle: { id: 7, value: 73.66666666666667, controller: -1 },
                 },
-                osc2Amplitude: { controller: -1, id: 3, value: 0 },
-                noiseLevel: { controller: -1, id: 4, value: 0 },
+                osc2Amplitude: { id: 3, value: 0, controller: 21 },
+                noiseLevel: { id: 4, value: 0, controller: -1 },
                 envelope: {
-                    attack: { controller: -1, id: 11, value: 0 },
-                    decay: { controller: -1, id: 12, value: 2.1166666666666734 },
-                    sustain: { controller: -1, id: 13, value: 6.350000000000006 },
-                    release: { controller: -1, id: 14, value: 83.60833333333333 },
+                    attack: { id: 11, value: 0, controller: 19 },
+                    decay: { id: 12, value: 2.1166666666666734, controller: -1 },
+                    sustain: { id: 13, value: 40, controller: 19 },
+                    release: { id: 14, value: 105, controller: 20 },
                 },
                 filter: {
                     mode: { value: 0 },
-                    cutoff: { controller: -1, id: 8, value: 127 },
-                    resonance: { controller: -1, id: 9, value: 0 },
-                    drive: { controller: -1, id: 10, value: 0 },
+                    cutoff: { id: 8, value: 127, controller: 14 },
+                    resonance: { id: 9, value: 0, controller: 15 },
+                    drive: { id: 10, value: 0, controller: 16 },
                 },
                 cutoffMod: {
-                    attack: { controller: -1, id: 21, value: 0 },
-                    decay: { controller: -1, id: 22, value: 15.875 },
-                    amount: { controller: -1, id: 19, value: 0 },
-                    velocity: { controller: -1, id: 20, value: 0 },
+                    attack: { id: 21, value: 0, controller: -1 },
+                    decay: { id: 22, value: 35, controller: 18 },
+                    amount: { id: 19, value: 0, controller: 17 },
+                    velocity: { id: 20, value: 0, controller: 18 },
                 },
                 lfo1: {
                     mode: { value: 0 },
                     destination: { value: 4 },
-                    frequency: { controller: -1, id: 15, value: 44.875 },
-                    modAmount: { controller: -1, id: 16, value: 0 },
+                    frequency: { id: 15, value: 44.875, controller: -1 },
+                    modAmount: { id: 16, value: 0, controller: -1 },
                 },
                 lfo2: {
                     mode: { value: 0 },
                     destination: { value: 5 },
-                    frequency: { controller: -1, id: 17, value: 56.75 },
-                    modAmount: { controller: -1, id: 18, value: 12 },
+                    frequency: { id: 17, value: 56.75, controller: -1 },
+                    modAmount: { id: 18, value: 12, controller: -1 },
                 },
             },
         },
@@ -5731,19 +5674,20 @@
         }
         nextOption() {
             this.options.next();
-            this.dispatchChange();
+            this.dispatchChange(true);
             this.requestUpdate();
         }
         previousOption() {
             this.options.previous();
-            this.dispatchChange();
+            this.dispatchChange(true);
             this.requestUpdate();
         }
-        dispatchChange() {
+        dispatchChange(shouldUpdate = false) {
             this.dispatchEvent(new CustomEvent("change", {
                 detail: {
                     type: this.mode,
                     option: this.options.getCurrent(),
+                    shouldUpdate,
                 },
             }));
         }
@@ -6068,10 +6012,10 @@
         }
     }
     class MidiControl {
-        constructor(id, value) {
-            this.controller = -1;
+        constructor(id, value, controller = -1) {
             this.id = id;
             this.value = value;
+            this.controller = controller;
             this.clone = this.clone.bind(this);
         }
         clone() {
@@ -6099,47 +6043,47 @@
         return {
             osc1: {
                 mode: new SelectControl(state.osc1.mode.value),
-                semiShift: new MidiControl(MidiControlID.OSC1_SEMI, state.osc1.semiShift.value),
-                centShift: new MidiControl(MidiControlID.OSC1_CENT, state.osc1.centShift.value),
-                cycle: new MidiControl(MidiControlID.OSC1_CYCLE, state.osc1.cycle.value)
+                semiShift: new MidiControl(MidiControlID.OSC1_SEMI, state.osc1.semiShift.value, state.osc1.semiShift.controller),
+                centShift: new MidiControl(MidiControlID.OSC1_CENT, state.osc1.centShift.value, state.osc1.centShift.controller),
+                cycle: new MidiControl(MidiControlID.OSC1_CYCLE, state.osc1.cycle.value, state.osc1.cycle.controller),
             },
             osc2: {
                 mode: new SelectControl(state.osc2.mode.value),
-                semiShift: new MidiControl(MidiControlID.OSC2_SEMI, state.osc2.semiShift.value),
-                centShift: new MidiControl(MidiControlID.OSC2_CENT, state.osc2.centShift.value),
-                cycle: new MidiControl(MidiControlID.OSC2_CYCLE, state.osc2.cycle.value)
+                semiShift: new MidiControl(MidiControlID.OSC2_SEMI, state.osc2.semiShift.value, state.osc2.semiShift.controller),
+                centShift: new MidiControl(MidiControlID.OSC2_CENT, state.osc2.centShift.value, state.osc2.centShift.controller),
+                cycle: new MidiControl(MidiControlID.OSC2_CYCLE, state.osc2.cycle.value, state.osc2.cycle.controller),
             },
-            osc2Amplitude: new MidiControl(MidiControlID.OSC_MIX, state.osc2Amplitude.value),
-            noiseLevel: new MidiControl(MidiControlID.NOISE, state.noiseLevel.value),
+            osc2Amplitude: new MidiControl(MidiControlID.OSC_MIX, state.osc2Amplitude.value, state.osc2Amplitude.controller),
+            noiseLevel: new MidiControl(MidiControlID.NOISE, state.noiseLevel.value, state.noiseLevel.controller),
             envelope: {
-                attack: new MidiControl(MidiControlID.ATTACK, state.envelope.attack.value),
-                decay: new MidiControl(MidiControlID.DECAY, state.envelope.decay.value),
-                sustain: new MidiControl(MidiControlID.SUSTAIN, state.envelope.sustain.value),
-                release: new MidiControl(MidiControlID.RELEASE, state.envelope.release.value),
+                attack: new MidiControl(MidiControlID.ATTACK, state.envelope.attack.value, state.envelope.attack.controller),
+                decay: new MidiControl(MidiControlID.DECAY, state.envelope.decay.value, state.envelope.decay.controller),
+                sustain: new MidiControl(MidiControlID.SUSTAIN, state.envelope.sustain.value, state.envelope.sustain.controller),
+                release: new MidiControl(MidiControlID.RELEASE, state.envelope.release.value, state.envelope.release.controller),
             },
             filter: {
                 mode: new SelectControl(state.filter.mode.value),
-                cutoff: new MidiControl(MidiControlID.CUTOFF, state.filter.cutoff.value),
-                resonance: new MidiControl(MidiControlID.RESONANCE, state.filter.resonance.value),
-                drive: new MidiControl(MidiControlID.DRIVE, state.filter.drive.value)
+                cutoff: new MidiControl(MidiControlID.CUTOFF, state.filter.cutoff.value, state.filter.cutoff.controller),
+                resonance: new MidiControl(MidiControlID.RESONANCE, state.filter.resonance.value, state.filter.resonance.controller),
+                drive: new MidiControl(MidiControlID.DRIVE, state.filter.drive.value, state.filter.drive.controller),
             },
             cutoffMod: {
-                attack: new MidiControl(MidiControlID.CUT_ATTACK, state.cutoffMod.attack.value),
-                decay: new MidiControl(MidiControlID.CUT_DECAY, state.cutoffMod.decay.value),
-                amount: new MidiControl(MidiControlID.CUT_MOD, state.cutoffMod.amount.value),
-                velocity: new MidiControl(MidiControlID.CUT_VEL, state.cutoffMod.velocity.value)
+                attack: new MidiControl(MidiControlID.CUT_ATTACK, state.cutoffMod.attack.value, state.cutoffMod.attack.controller),
+                decay: new MidiControl(MidiControlID.CUT_DECAY, state.cutoffMod.decay.value, state.cutoffMod.decay.controller),
+                amount: new MidiControl(MidiControlID.CUT_MOD, state.cutoffMod.amount.value, state.cutoffMod.amount.controller),
+                velocity: new MidiControl(MidiControlID.CUT_VEL, state.cutoffMod.velocity.value, state.cutoffMod.velocity.controller),
             },
             lfo1: {
                 mode: new SelectControl(state.lfo1.mode.value),
                 destination: new SelectControl(state.lfo1.destination.value),
-                frequency: new MidiControl(MidiControlID.LFO1_FREQ, state.lfo1.frequency.value),
-                modAmount: new MidiControl(MidiControlID.LFO1_MOD, state.lfo1.modAmount.value),
+                frequency: new MidiControl(MidiControlID.LFO1_FREQ, state.lfo1.frequency.value, state.lfo1.frequency.controller),
+                modAmount: new MidiControl(MidiControlID.LFO1_MOD, state.lfo1.modAmount.value, state.lfo1.modAmount.controller),
             },
             lfo2: {
                 mode: new SelectControl(state.lfo2.mode.value),
                 destination: new SelectControl(state.lfo2.destination.value),
-                frequency: new MidiControl(MidiControlID.LFO2_FREQ, state.lfo2.frequency.value),
-                modAmount: new MidiControl(MidiControlID.LFO2_MOD, state.lfo2.modAmount.value),
+                frequency: new MidiControl(MidiControlID.LFO2_FREQ, state.lfo2.frequency.value, state.lfo2.frequency.controller),
+                modAmount: new MidiControl(MidiControlID.LFO2_MOD, state.lfo2.modAmount.value, state.lfo2.modAmount.controller),
             },
         };
     }
@@ -6149,6 +6093,9 @@
         return Object.assign(newState, {
             findMidiControlById(id) {
                 return midiControlMap.get(id);
+            },
+            getMidiControls() {
+                return midiControlMap.values();
             },
         });
     }
@@ -6215,13 +6162,13 @@
     class VoiceManager extends Dispatcher {
         constructor(audioContext) {
             super();
-            this.state = createVoiceState(PresetOptions.getCurrent().value);
             this.voiceGenerator = createVoiceGenerator(audioContext);
             this.voices = new Map();
             this.output = new GainNode(audioContext);
             this.onMidiNoteOn = this.onMidiNoteOn.bind(this);
             this.onMidiNoteOff = this.onMidiNoteOff.bind(this);
             this.onMidiCC = this.onMidiCC.bind(this);
+            this.setState(createVoiceState(PresetOptions.getCurrent().value));
         }
         next({ frequency, midiValue, velocity = 60 }) {
             if (this.voices.has(midiValue)) {
@@ -6270,6 +6217,7 @@
                 .subscribe(MidiMessageEvent.NOTE_ON, this.onMidiNoteOn)
                 .subscribe(MidiMessageEvent.NOTE_OFF, this.onMidiNoteOff)
                 .subscribe(MidiMessageEvent.CONTROL_CHANGE, this.onMidiCC);
+            this.bindMidiControls();
             return this;
         }
         setKeyBoardcontroller(keyBoardController) {
@@ -6293,6 +6241,7 @@
             if (!midiControl) {
                 return;
             }
+            midiControl.controller = message.data.control;
             midiControl.value = message.data.value;
             if (message.isMidiLearning) {
                 this.midiController.mapControl(message.data.control, midiControl.id);
@@ -6363,7 +6312,19 @@
         }
         setState(newState) {
             this.state = createVoiceState(newState);
+            this.bindMidiControls();
             return this.getState();
+        }
+        bindMidiControls() {
+            if (!this.state) {
+                return;
+            }
+            if (!this.midiController) {
+                return;
+            }
+            for (const control of this.state.getMidiControls()) {
+                this.midiController.mapControl(control.controller, control.id);
+            }
         }
         setOsc1Mode(newMode) {
             this.state.osc1.mode.value = newMode;
@@ -6654,6 +6615,9 @@
                 return;
             }
             const messageChannel = message.data.channel;
+            if (isControlChange(message)) {
+                return dispatchControlChangeMessage(message);
+            }
             if (messageChannel !== currentChannel && currentChannel !== MidiOmniChannel) {
                 return;
             }
@@ -6662,9 +6626,6 @@
             }
             if (message.status === Status.NOTE_OFF) {
                 midiDispatcher.dispatch(MidiMessageEvent.NOTE_OFF, message);
-            }
-            if (isControlChange(message)) {
-                dispatchControlChangeMessage(message);
             }
         }
         function dispatchControlChangeMessage(message) {
@@ -6760,6 +6721,7 @@
             super();
             this.currentLearnerID = MidiControlID.NONE;
             this.showVizualizer = false;
+            this.editMode = false;
             this.pressedKeys = new Set();
             this.audioContext = new AudioContext();
             this.analyzer = this.audioContext.createAnalyser();
@@ -6960,19 +6922,25 @@
             }
         }
         async onMenuChange(event) {
-            const { type, option } = event.detail;
+            const { type, option, shouldUpdate } = event.detail;
             switch (type) {
                 case MenuMode.MIDI_LEARN:
                     this.currentLearnerID = option.value;
-                    this.midiController.setCurrentLearnerID(this.currentLearnerID);
+                    if (shouldUpdate) {
+                        this.midiController.setCurrentLearnerID(this.currentLearnerID);
+                    }
                     break;
                 case MenuMode.MIDI_CHANNEL:
                     this.unlearn();
-                    this.midiController.setCurrentChannel(option.value);
+                    if (shouldUpdate) {
+                        this.midiController.setCurrentChannel(option.value);
+                    }
                     break;
                 case MenuMode.PRESET:
                     this.unlearn();
-                    this.state = this.voiceManager.setState(option.value);
+                    if (shouldUpdate) {
+                        this.state = this.voiceManager.setState(option.value);
+                    }
                     break;
             }
             await this.requestUpdate();
@@ -6985,9 +6953,18 @@
             if (this.showVizualizer) {
                 return html `
         <div class="visualizer">
-          <visualizer-element .analyser=${this.analyzer} width="650" height="200"></visualizer-element>
+          <visualizer-element
+            .analyser=${this.analyzer}
+            width="650"
+            height="200"
+          ></visualizer-element>
         </div>
       `;
+            }
+        }
+        computeDumpButtonIfEnabled() {
+            if (this.editMode) {
+                return html `<button @click=${this.voiceManager.dumpState}>Dump</button>`;
             }
         }
         render() {
@@ -6995,7 +6972,10 @@
       <div class="content">
         <div class="synth">
           <div class="menu">
-            <menu-element .analyser=${this.analyzer} @change=${this.onMenuChange}></menu-element>
+            <menu-element
+              .analyser=${this.analyzer}
+              @change=${this.onMenuChange}
+            ></menu-element>
           </div>
           <div class="panels-row">
             <oscillator-element
@@ -7070,6 +7050,7 @@
           </div>
         </div>
         ${this.computeVizualizerIfEnabled()}
+        ${this.computeDumpButtonIfEnabled()}
       </div>
     `;
         }
