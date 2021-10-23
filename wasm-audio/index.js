@@ -7173,8 +7173,7 @@
         BrowserStatus[BrowserStatus["NOK"] = 1] = "NOK";
     })(BrowserStatus || (BrowserStatus = {}));
     function isChrome() {
-        const runtimeWindow = window;
-        return !!runtimeWindow.chrome && (!!runtimeWindow.chrome.webstore || !!runtimeWindow.chrome.runtime);
+        return RegExp(/Chrom(?:e|ium)\/([0-9]+)/).test(navigator.userAgent);
     }
     function isUpToDate() {
         let version = navigator.userAgent.match(/Chrom(?:e|ium)\/([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)/);
