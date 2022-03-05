@@ -1,0 +1,219 @@
+<!DOCTYPE html><html class="default"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>noon-io</title><meta name="description" content="Documentation for noon-io"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script async src="assets/search.js" id="search-script"></script></head><body><script>document.body.classList.add(localStorage.getItem("tsd-theme") || "os")</script><header><div class="tsd-page-toolbar"><div class="container"><div class="table-wrap"><div class="table-cell" id="tsd-search" data-base="."><div class="field"><label for="tsd-search-field" class="tsd-widget search no-caption">Search</label><input type="text" id="tsd-search-field"/></div><ul class="results"><li class="state loading">Preparing search index...</li><li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">noon-io</a></div><div class="table-cell" id="tsd-widgets"><div id="tsd-filter"><a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a><div class="tsd-filter-group"><div class="tsd-select" id="tsd-filter-visibility"><span class="tsd-select-label">All</span><ul class="tsd-select-list"><li data-value="public">Public</li><li data-value="protected">Public/Protected</li><li data-value="private" class="selected">All</li></ul></div> <input type="checkbox" id="tsd-filter-inherited" checked/><label class="tsd-widget" for="tsd-filter-inherited">Inherited</label><input type="checkbox" id="tsd-filter-externals" checked/><label class="tsd-widget" for="tsd-filter-externals">Externals</label></div></div><a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a></div></div></div></div><div class="tsd-page-title"><div class="container"><h1>noon-io</h1></div></div></header><div class="container container-main"><div class="row"><div class="col-8 col-content"><div class="tsd-panel tsd-typography">
+<a href="#🎹-noon-io" id="🎹-noon-io" style="color: inherit; text-decoration: none;">
+  <h1>🎹 noon-io</h1>
+</a>
+<p>Easy io for the <a href="https://www.w3.org/TR/webmidi/">Web MIDI API</a></p>
+
+<a href="#🚨-disclaimer" id="🚨-disclaimer" style="color: inherit; text-decoration: none;">
+  <h2>🚨 Disclaimer</h2>
+</a>
+<p>Development has just started and until v1.0.0 has been released, noon-io should be considered at least unstable.</p>
+
+<a href="#🚀-getting-started" id="🚀-getting-started" style="color: inherit; text-decoration: none;">
+  <h1>🚀 Getting started</h1>
+</a>
+
+<a href="#package-install" id="package-install" style="color: inherit; text-decoration: none;">
+  <h2>:package: Install</h2>
+</a>
+<pre><code class="language-bash"><span class="hl-0">npm i noon-io</span>
+</code></pre>
+
+<a href="#📤-send-midi-messages" id="📤-send-midi-messages" style="color: inherit; text-decoration: none;">
+  <h2>📤 Send MIDI messages</h2>
+</a>
+<p>Send a A4 <code>NOTE ON</code> message on all available MIDI outputs</p>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">*</span><span class="hl-0"> </span><span class="hl-1">as</span><span class="hl-0"> </span><span class="hl-3">NIO</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-4">&#39;noon-io&#39;</span><span class="hl-0">;</span><br/><br/><span class="hl-5">// Gain access to the Web MIDI API</span><br/><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">midiAccess</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-3">navigator</span><span class="hl-0">.</span><span class="hl-7">requestMIDIAccess</span><span class="hl-0">();</span><br/><br/><span class="hl-5">// Send a Note On message over all available outputs on channel 2</span><br/><span class="hl-1">for</span><span class="hl-0"> (</span><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">output</span><span class="hl-0"> </span><span class="hl-2">of</span><span class="hl-0"> </span><span class="hl-3">midiAccess</span><span class="hl-0">.</span><span class="hl-3">outputs</span><span class="hl-0">.</span><span class="hl-7">values</span><span class="hl-0">()) {</span><br/><span class="hl-0">    </span><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">noteOnMessage</span><span class="hl-0"> = {</span><br/><span class="hl-0">        </span><span class="hl-3">status:</span><span class="hl-0"> </span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-3">MidiStatus</span><span class="hl-0">.</span><span class="hl-6">NOTE_ON</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">channel:</span><span class="hl-0"> </span><span class="hl-8">2</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">data:</span><span class="hl-0"> {</span><br/><span class="hl-0">            </span><span class="hl-3">value:</span><span class="hl-0"> </span><span class="hl-8">69</span><span class="hl-0">, </span><span class="hl-5">// A4</span><br/><span class="hl-0">            </span><span class="hl-3">velocity:</span><span class="hl-0"> </span><span class="hl-8">127</span><br/><span class="hl-0">        }</span><br/><span class="hl-0">    };</span><br/><span class="hl-0">    </span><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">writeMidiMessage</span><span class="hl-0">(</span><span class="hl-3">noteOnMessage</span><span class="hl-0">));</span><br/><span class="hl-0">}</span>
+</code></pre>
+
+<a href="#🔨-using-factory-functions" id="🔨-using-factory-functions" style="color: inherit; text-decoration: none;">
+  <h2>🔨 Using factory functions</h2>
+</a>
+<p>For one dedicated channel, noon-io offers a more concise way of writing messages using factory functions.</p>
+<pre><code class="language-typescript"><span class="hl-5">// send a CC of 80 for control 71</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">channel</span><span class="hl-0">(</span><span class="hl-8">2</span><span class="hl-0">).</span><span class="hl-7">controlChange</span><span class="hl-0">(</span><span class="hl-8">71</span><span class="hl-0">, </span><span class="hl-8">80</span><span class="hl-0">));</span><br/><span class="hl-5">// send a A4 note on message with a velocity of 120</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">channel</span><span class="hl-0">(</span><span class="hl-8">2</span><span class="hl-0">).</span><span class="hl-7">noteOn</span><span class="hl-0">(</span><span class="hl-8">69</span><span class="hl-0">, </span><span class="hl-8">120</span><span class="hl-0">));</span><br/><span class="hl-5">// send the subsequent note off message for our A4 note</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">channel</span><span class="hl-0">(</span><span class="hl-8">2</span><span class="hl-0">).</span><span class="hl-7">noteOff</span><span class="hl-0">(</span><span class="hl-8">69</span><span class="hl-0">));</span>
+</code></pre>
+
+<a href="#📥-read-midi-messages" id="📥-read-midi-messages" style="color: inherit; text-decoration: none;">
+  <h2>📥 Read MIDI messages</h2>
+</a>
+<p>Print messages received from any available MIDI input in the console.</p>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">*</span><span class="hl-0"> </span><span class="hl-1">as</span><span class="hl-0"> </span><span class="hl-3">NIO</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-4">&#39;noon-io&#39;</span><span class="hl-0">;</span><br/><br/><span class="hl-5">// Gain access to the Web MIDI API</span><br/><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">midiAccess</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-3">navigator</span><span class="hl-0">.</span><span class="hl-7">requestMIDIAccess</span><span class="hl-0">();</span><br/><br/><span class="hl-5">// Log messages received from any available input</span><br/><span class="hl-1">for</span><span class="hl-0"> (</span><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">input</span><span class="hl-0"> </span><span class="hl-2">of</span><span class="hl-0"> </span><span class="hl-3">midiAccess</span><span class="hl-0">.</span><span class="hl-3">inputs</span><span class="hl-0">.</span><span class="hl-7">values</span><span class="hl-0">()) {</span><br/><span class="hl-0">    </span><span class="hl-3">input</span><span class="hl-0">.</span><span class="hl-7">onmidimessage</span><span class="hl-0"> = (</span><span class="hl-3">msg</span><span class="hl-0">) </span><span class="hl-2">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-3">console</span><span class="hl-0">.</span><span class="hl-7">log</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">readMidiMessage</span><span class="hl-0">(</span><span class="hl-3">msg</span><span class="hl-0">.</span><span class="hl-3">data</span><span class="hl-0">));</span><br/><span class="hl-0">    };</span><br/><span class="hl-0">}</span>
+</code></pre>
+
+<a href="#⚗️q-bank-select--program-change" id="⚗️q-bank-select--program-change" style="color: inherit; text-decoration: none;">
+  <h2>⚗️q Bank Select / Program Change</h2>
+</a>
+<p>Sending a bank select followed by a program change can be achieved by sending two consecutives contol change messages before 
+sending the actual program change. </p>
+<p>(The following has been tested on a Dave Smith Instruments Mopho device)</p>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">*</span><span class="hl-0"> </span><span class="hl-1">as</span><span class="hl-0"> </span><span class="hl-3">NIO</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-4">&#39;noon-io&#39;</span><span class="hl-0">;</span><br/><span class="hl-5">/*</span><br/><span class="hl-5"> * Start Bank Select message</span><br/><span class="hl-5"> * Selects banks 2 (bank 1 is 0) for channel 2</span><br/><span class="hl-5"> */</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><br/><span class="hl-0">    </span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">writeMidiMessage</span><span class="hl-0">({</span><br/><span class="hl-0">        </span><span class="hl-3">status:</span><span class="hl-0"> </span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-3">MidiStatus</span><span class="hl-0">.</span><span class="hl-6">CONTROL_CHANGE</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">channel:</span><span class="hl-0"> </span><span class="hl-8">2</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">data:</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-3">control:</span><span class="hl-0"> </span><span class="hl-8">32</span><span class="hl-0">, </span><span class="hl-5">// always 32</span><br/><span class="hl-0">            </span><span class="hl-3">value:</span><span class="hl-0"> </span><span class="hl-8">1</span><span class="hl-0">, </span><span class="hl-5">// bank value</span><br/><span class="hl-0">        }</span><br/><span class="hl-0">    })</span><br/><span class="hl-0">);</span><br/><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><br/><span class="hl-0">    </span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">writeMidiMessage</span><span class="hl-0">({</span><br/><span class="hl-0">        </span><span class="hl-3">status:</span><span class="hl-0"> </span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-3">MidiStatus</span><span class="hl-0">.</span><span class="hl-6">CONTROL_CHANGE</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">channel:</span><span class="hl-0"> </span><span class="hl-8">2</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">data:</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-3">control:</span><span class="hl-0"> </span><span class="hl-8">0</span><span class="hl-0">, </span><span class="hl-5">// always 0</span><br/><span class="hl-0">            </span><span class="hl-3">value:</span><span class="hl-0"> </span><span class="hl-8">1</span><span class="hl-0">, </span><span class="hl-5">// bank value (ignored on most devices)</span><br/><span class="hl-0">        }</span><br/><span class="hl-0">    })</span><br/><span class="hl-0">); </span><span class="hl-5">// Ends bank select message</span><br/><br/><span class="hl-5">/*</span><br/><span class="hl-5"> * Now that we have selected bank 2,</span><br/><span class="hl-5"> * let&#39;s select a random program</span><br/><span class="hl-5"> */</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><br/><span class="hl-0">    </span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">writeMidiMessage</span><span class="hl-0">({</span><br/><span class="hl-0">        </span><span class="hl-3">status:</span><span class="hl-0"> </span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-3">MidiStatus</span><span class="hl-0">.</span><span class="hl-6">PROGRAM_CHANGE</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">channel:</span><span class="hl-0"> </span><span class="hl-8">2</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">data:</span><span class="hl-0"> {</span><br/><span class="hl-0">            </span><span class="hl-3">value:</span><span class="hl-0"> </span><span class="hl-9">Math</span><span class="hl-0">.</span><span class="hl-7">ceil</span><span class="hl-0">(</span><span class="hl-9">Math</span><span class="hl-0">.</span><span class="hl-7">random</span><span class="hl-0">() * </span><span class="hl-8">127</span><span class="hl-0">),</span><br/><span class="hl-0">        }</span><br/><span class="hl-0">    })</span><br/><span class="hl-0">);</span><br/>
+</code></pre>
+<p>Or using factory functions</p>
+<pre><code class="language-typescript"><span class="hl-5">// Select bank 1</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">channel</span><span class="hl-0">(</span><span class="hl-8">2</span><span class="hl-0">).</span><span class="hl-7">controlChange</span><span class="hl-0">(</span><span class="hl-8">32</span><span class="hl-0">, </span><span class="hl-8">0</span><span class="hl-0">));</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">channel</span><span class="hl-0">(</span><span class="hl-8">2</span><span class="hl-0">).</span><span class="hl-7">controlChange</span><span class="hl-0">(</span><span class="hl-8">0</span><span class="hl-0">, </span><span class="hl-8">0</span><span class="hl-0">));</span><br/><span class="hl-5">// Select program 109 from bank 1</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">channel</span><span class="hl-0">(</span><span class="hl-8">2</span><span class="hl-0">).</span><span class="hl-7">programChane</span><span class="hl-0">(</span><span class="hl-8">109</span><span class="hl-0">));</span>
+</code></pre>
+
+<a href="#🚧-supported-messages" id="🚧-supported-messages" style="color: inherit; text-decoration: none;">
+  <h1>🚧 Supported Messages</h1>
+</a>
+<p>⚠️ Some of the following MIDI messages may not have been tested on a MIDI port (see the status section of the following tables)</p>
+
+<a href="#🎶-channel-messages" id="🎶-channel-messages" style="color: inherit; text-decoration: none;">
+  <h2>🎶 Channel Messages</h2>
+</a>
+<table>
+<thead>
+<tr>
+<th align="center">Type</th>
+<th align="center">Reader</th>
+<th align="center">Writer</th>
+<th align="left">Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">NOTE_ON</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Read and write have been tested on a MIDI port</td>
+</tr>
+<tr>
+<td align="center">NOTE_OFF</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Read and write have been tested on a MIDI port</td>
+</tr>
+<tr>
+<td align="center">PITCH_BEND</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Read and write have been tested on a MIDI port</td>
+</tr>
+<tr>
+<td align="center">CONTROL_CHANGE</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Read and write have been tested on a MIDI port</td>
+</tr>
+<tr>
+<td align="center">PROGRAM_CHANGE</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Read and write have been tested on a MIDI port</td>
+</tr>
+<tr>
+<td align="center">NOTE_AFTER_TOUCH</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Both read and write have not been tested</td>
+</tr>
+<tr>
+<td align="center">CHANNEL_AFTER_TOUCH</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Both read and write have not been tested</td>
+</tr>
+</tbody></table>
+
+<a href="#🎛️-system-messages" id="🎛️-system-messages" style="color: inherit; text-decoration: none;">
+  <h2>🎛️ System Messages</h2>
+</a>
+<table>
+<thead>
+<tr>
+<th align="center">Type</th>
+<th align="center">Reader</th>
+<th align="center">Writer</th>
+<th align="left">Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SYSEX_MESSAGE</td>
+<td align="center">✅</td>
+<td align="center">❌</td>
+<td align="left">Read has not been tested, write is not implemented</td>
+</tr>
+<tr>
+<td align="center">SEQUENCE_NAME</td>
+<td align="center">✅</td>
+<td align="center">❌</td>
+<td align="left">Read has not been tested, write is not implemented</td>
+</tr>
+<tr>
+<td align="center">INSTRUMENT_NAME</td>
+<td align="center">✅</td>
+<td align="center">❌</td>
+<td align="left">Read has not been tested, write is not implemented</td>
+</tr>
+<tr>
+<td align="center">SEQUENCE_NUMBER</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">TEXT_EVENT</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">COPYRIGHT_NOTICE</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">LYRIC</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">MARKER</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">CUE_POINT</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">MIDI_CHANNEL_PREFIX</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">END_OF_TRACK</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">SET_TEMPO</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">SMPTE_OFFSET</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">TIME_SIGNATURE</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+<tr>
+<td align="center">KEY_SIGNATURE</td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left">Not implemented</td>
+</tr>
+</tbody></table>
+</div></div><div class="col-4 col-menu menu-sticky-wrap menu-highlight"><nav class="tsd-navigation primary"><ul><li class="current"><a href="modules.html">Exports</a></li></ul></nav><nav class="tsd-navigation secondary menu-sticky"><ul><li class="tsd-kind-enum"><a href="enums/MidiStatus.html" class="tsd-kind-icon">Midi<wbr/>Status</a></li><li class="tsd-kind-interface"><a href="interfaces/MidiControlChange.html" class="tsd-kind-icon">Midi<wbr/>Control<wbr/>Change</a></li><li class="tsd-kind-interface tsd-has-type-parameter"><a href="interfaces/MidiMessage.html" class="tsd-kind-icon">Midi<wbr/>Message</a></li><li class="tsd-kind-interface"><a href="interfaces/MidiMessageFactory.html" class="tsd-kind-icon">Midi<wbr/>Message<wbr/>Factory</a></li><li class="tsd-kind-interface"><a href="interfaces/MidiNote.html" class="tsd-kind-icon">Midi<wbr/>Note</a></li><li class="tsd-kind-interface"><a href="interfaces/MidiNoteAfterTouch.html" class="tsd-kind-icon">Midi<wbr/>Note<wbr/>After<wbr/>Touch</a></li><li class="tsd-kind-interface"><a href="interfaces/MidiPitchBend.html" class="tsd-kind-icon">Midi<wbr/>Pitch<wbr/>Bend</a></li><li class="tsd-kind-interface tsd-has-type-parameter"><a href="interfaces/SingleValue.html" class="tsd-kind-icon">Single<wbr/>Value</a></li><li class="tsd-kind-interface"><a href="interfaces/VariableLengthValue.html" class="tsd-kind-icon">Variable<wbr/>Length<wbr/>Value</a></li><li class="tsd-kind-type-alias"><a href="modules.html#BankSelect" class="tsd-kind-icon">Bank<wbr/>Select</a></li><li class="tsd-kind-type-alias"><a href="modules.html#MidiData" class="tsd-kind-icon">Midi<wbr/>Data</a></li><li class="tsd-kind-type-alias"><a href="modules.html#NumberValue" class="tsd-kind-icon">Number<wbr/>Value</a></li><li class="tsd-kind-type-alias"><a href="modules.html#StringValue" class="tsd-kind-icon">String<wbr/>Value</a></li><li class="tsd-kind-type-alias"><a href="modules.html#SysexValue" class="tsd-kind-icon">Sysex<wbr/>Value</a></li><li class="tsd-kind-function"><a href="modules.html#channel" class="tsd-kind-icon">channel</a></li><li class="tsd-kind-function"><a href="modules.html#readMidiMessage" class="tsd-kind-icon">read<wbr/>Midi<wbr/>Message</a></li><li class="tsd-kind-function"><a href="modules.html#writeMidiMessage" class="tsd-kind-icon">write<wbr/>Midi<wbr/>Message</a></li></ul></nav></div></div></div><footer class="with-border-bottom"><div class="container"><h2>Legend</h2><div class="tsd-legend-group"><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li><li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li></ul></div><h2>Settings</h2><p>Theme <select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></p></div></footer><div class="container tsd-generator"><p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div><div class="overlay"></div><script src="assets/main.js"></script></body></html>
