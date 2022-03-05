@@ -9,12 +9,17 @@
 </a>
 <p>Development has just started and until v1.0.0 has been released, noon-io should be considered at least unstable.</p>
 
+<a href="#🗒️-api-documentation" id="🗒️-api-documentation" style="color: inherit; text-decoration: none;">
+  <h1>🗒️ API Documentation</h1>
+</a>
+<p>A more detailed documentation of noon-io can be found <a href="https://a-cordier.github.io/noon-io/docs">here</a>.</p>
+
 <a href="#🚀-getting-started" id="🚀-getting-started" style="color: inherit; text-decoration: none;">
   <h1>🚀 Getting started</h1>
 </a>
 
-<a href="#package-install" id="package-install" style="color: inherit; text-decoration: none;">
-  <h2>:package: Install</h2>
+<a href="#📦-install" id="📦-install" style="color: inherit; text-decoration: none;">
+  <h2>📦 Install</h2>
 </a>
 <pre><code class="language-bash"><span class="hl-0">npm i noon-io</span>
 </code></pre>
@@ -40,8 +45,8 @@
 <pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">*</span><span class="hl-0"> </span><span class="hl-1">as</span><span class="hl-0"> </span><span class="hl-3">NIO</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-4">&#39;noon-io&#39;</span><span class="hl-0">;</span><br/><br/><span class="hl-5">// Gain access to the Web MIDI API</span><br/><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">midiAccess</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-3">navigator</span><span class="hl-0">.</span><span class="hl-7">requestMIDIAccess</span><span class="hl-0">();</span><br/><br/><span class="hl-5">// Log messages received from any available input</span><br/><span class="hl-1">for</span><span class="hl-0"> (</span><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">input</span><span class="hl-0"> </span><span class="hl-2">of</span><span class="hl-0"> </span><span class="hl-3">midiAccess</span><span class="hl-0">.</span><span class="hl-3">inputs</span><span class="hl-0">.</span><span class="hl-7">values</span><span class="hl-0">()) {</span><br/><span class="hl-0">    </span><span class="hl-3">input</span><span class="hl-0">.</span><span class="hl-7">onmidimessage</span><span class="hl-0"> = (</span><span class="hl-3">msg</span><span class="hl-0">) </span><span class="hl-2">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-3">console</span><span class="hl-0">.</span><span class="hl-7">log</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">readMidiMessage</span><span class="hl-0">(</span><span class="hl-3">msg</span><span class="hl-0">.</span><span class="hl-3">data</span><span class="hl-0">));</span><br/><span class="hl-0">    };</span><br/><span class="hl-0">}</span>
 </code></pre>
 
-<a href="#⚗️q-bank-select--program-change" id="⚗️q-bank-select--program-change" style="color: inherit; text-decoration: none;">
-  <h2>⚗️q Bank Select / Program Change</h2>
+<a href="#⚗️-bank-select--program-change" id="⚗️-bank-select--program-change" style="color: inherit; text-decoration: none;">
+  <h2>⚗️ Bank Select / Program Change</h2>
 </a>
 <p>Sending a bank select followed by a program change can be achieved by sending two consecutives contol change messages before 
 sending the actual program change. </p>
