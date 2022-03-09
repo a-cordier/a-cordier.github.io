@@ -31,13 +31,13 @@
 <pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">*</span><span class="hl-0"> </span><span class="hl-1">as</span><span class="hl-0"> </span><span class="hl-3">NIO</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-4">&#39;noon-io&#39;</span><span class="hl-0">;</span><br/><br/><span class="hl-5">// Gain access to the Web MIDI API</span><br/><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">midiAccess</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-3">navigator</span><span class="hl-0">.</span><span class="hl-7">requestMIDIAccess</span><span class="hl-0">();</span><br/><br/><span class="hl-5">// Send a Note On message over all available outputs on channel 2</span><br/><span class="hl-1">for</span><span class="hl-0"> (</span><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">output</span><span class="hl-0"> </span><span class="hl-2">of</span><span class="hl-0"> </span><span class="hl-3">midiAccess</span><span class="hl-0">.</span><span class="hl-3">outputs</span><span class="hl-0">.</span><span class="hl-7">values</span><span class="hl-0">()) {</span><br/><span class="hl-0">    </span><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-6">noteOnMessage</span><span class="hl-0"> = {</span><br/><span class="hl-0">        </span><span class="hl-3">status:</span><span class="hl-0"> </span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-3">MidiStatus</span><span class="hl-0">.</span><span class="hl-6">NOTE_ON</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">channel:</span><span class="hl-0"> </span><span class="hl-8">2</span><span class="hl-0">,</span><br/><span class="hl-0">        </span><span class="hl-3">data:</span><span class="hl-0"> {</span><br/><span class="hl-0">            </span><span class="hl-3">value:</span><span class="hl-0"> </span><span class="hl-8">69</span><span class="hl-0">, </span><span class="hl-5">// A4</span><br/><span class="hl-0">            </span><span class="hl-3">velocity:</span><span class="hl-0"> </span><span class="hl-8">127</span><br/><span class="hl-0">        }</span><br/><span class="hl-0">    };</span><br/><span class="hl-0">    </span><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">writeMidiMessage</span><span class="hl-0">(</span><span class="hl-3">noteOnMessage</span><span class="hl-0">));</span><br/><span class="hl-0">}</span>
 </code></pre>
 
-<a href="#🔨-using-factory-functions" id="🔨-using-factory-functions" style="color: inherit; text-decoration: none;">
-  <h2>🔨 Using factory functions</h2>
+<a href="#🔨-using-channel-message-factory-functions" id="🔨-using-channel-message-factory-functions" style="color: inherit; text-decoration: none;">
+  <h2>🔨 Using channel message factory functions</h2>
 </a>
 <p>For one dedicated channel, noon-io offers a more concise way of writing messages using factory functions.</p>
 <pre><code class="language-typescript"><span class="hl-5">// send a CC of 80 for control 71</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">channel</span><span class="hl-0">(</span><span class="hl-8">2</span><span class="hl-0">).</span><span class="hl-7">controlChange</span><span class="hl-0">(</span><span class="hl-8">71</span><span class="hl-0">, </span><span class="hl-8">80</span><span class="hl-0">));</span><br/><span class="hl-5">// send a A4 note on message with a velocity of 120</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">channel</span><span class="hl-0">(</span><span class="hl-8">2</span><span class="hl-0">).</span><span class="hl-7">noteOn</span><span class="hl-0">(</span><span class="hl-8">69</span><span class="hl-0">, </span><span class="hl-8">120</span><span class="hl-0">));</span><br/><span class="hl-5">// send the subsequent note off message for our A4 note</span><br/><span class="hl-3">output</span><span class="hl-0">.</span><span class="hl-7">send</span><span class="hl-0">(</span><span class="hl-6">NIO</span><span class="hl-0">.</span><span class="hl-7">channel</span><span class="hl-0">(</span><span class="hl-8">2</span><span class="hl-0">).</span><span class="hl-7">noteOff</span><span class="hl-0">(</span><span class="hl-8">69</span><span class="hl-0">));</span>
 </code></pre>
-<p>For more information about noon-io factories, you can checkout this <a href="https://a-cordier.github.io/noon-io/docs/interfaces/MidiMessageFactory.html">documentation</a></p>
+<p>For more information about noon-io factories, you can checkout this <a href="https://a-cordier.github.io/noon-io/docs/interfaces/ChannelMessageFactory.html">documentation</a></p>
 
 <a href="#📥-read-midi-messages" id="📥-read-midi-messages" style="color: inherit; text-decoration: none;">
   <h2>📥 Read MIDI messages</h2>
@@ -132,6 +132,42 @@ sending the actual program change. </p>
 </tr>
 </thead>
 <tbody><tr>
+<td align="left">TIMING_CLOCK</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Both read and write have not been tested</td>
+</tr>
+<tr>
+<td align="left">START</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Both read and write have not been tested</td>
+</tr>
+<tr>
+<td align="left">STOP</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Both read and write have not been tested</td>
+</tr>
+<tr>
+<td align="left">CONTINUE</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Both read and write have not been tested</td>
+</tr>
+<tr>
+<td align="left">SYSTEM_RESET</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Both read and write have not been tested</td>
+</tr>
+<tr>
+<td align="left">ACTIVE_SENDING</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="left">Both read and write have not been tested</td>
+</tr>
+<tr>
 <td align="left">SYSEX_MESSAGE</td>
 <td align="center">✅</td>
 <td align="center">❌</td>
